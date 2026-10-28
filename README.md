@@ -47,14 +47,28 @@
 
 ## Стек
 
+TypeScript на всех слоях. Design First: один контракт, из него генерируются спецификация, серверные маршруты и клиентский SDK.
 
-**NB:**  
-реализуем по принципу Design First  
-API состоит из:  
-TypeSpec-контракта  
-сгенерированной OpenAPI-спецификации  
-клиентского SDK для фронтенда  
-Серверные типы и маршруты генерируются
+| Слой | Выбор |
+|---|---|
+| Контракт | TypeSpec (`@typespec/http`, `@typespec/openapi3`) |
+| Спецификация | OpenAPI 3, эмиттер `@typespec/openapi3` |
+| Серверные маршруты и типы | `@typespec/http-server-js` |
+| HTTP | Node.js 22, встроенный `http` |
+| Клиентский SDK | `@typespec/http-client-js` |
+| База | PostgreSQL 16 |
+| Доступ к данным | Drizzle |
+| Фронтенд | Vite, React, TypeScript, React Router, TanStack Query |
+| Стили | CSS Modules |
+| Тесты | Vitest |
+| Пакеты | pnpm workspaces: `spec`, `server`, `web` |
+| Локальная база | Docker Compose |
+
+Эмиттер генерирует роутер, TypeScript-модели и интерфейсы операций (`createMeetingType`, `listSlots`, `createBooking`). В `server/` вручную пишутся функции, которые эти интерфейсы реализуют: запросы в Postgres, расчёт слотов, ответ 409. Эти функции передаются в сгенерированный роутер — он сам разбирает HTTP и вызывает нужную.
+
+Слоты не хранятся: рабочие часы заданы конфигом, свободные интервалы вычисляются. Время в базе — `timestamptz` (UTC), «сегодня» и рабочие часы считаются в таймзоне владельца. Конфликт брони закрывает уникальный индекс на `start_at` внутри транзакции: второй запрос получает 409.
+
+Эмиттеры `@typespec/http-server-js` и `@typespec/http-client-js` в статусе preview. Если генерация начнёт ломаться, контракт не меняется: клиент собирается через `openapi-typescript` и `openapi-fetch`, сервер — Fastify с типами из OpenAPI.
 
 ## Установка
 
