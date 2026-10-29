@@ -8,6 +8,7 @@ filter = '''
         `(^|/)docker-compose\.yml$`,
         `(^|/)mise\.toml$`,
         `(^|/)README\.md$`,
+        `(^|/)\.github/workflows/quality\.yml$`,
     ]) &&
     (
         filter.findMatch(finding["secret"], `^postgres(?:ql)?://postgres:postgres@(?:localhost|db):5432/`) != "" ||
