@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "unicorn",
+    "oxc",
+    "typescript",
+    "import",
+    "react",
+    "jsx-a11y",
+    "node",
+    "promise",
+    "vitest"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/spec/openapi.json",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**"
+  ],
+  "overrides": [
+    {
+      "files": ["packages/web/**/*.{ts,tsx}"],
+      "env": {
+        "browser": true
+      }
+    },
+    {
+      "files": ["packages/server/**/*.ts", "*.config.ts"],
+      "env": {
+        "node": true
+      }
+    },
+    {
+      // TODO(2027-01-31): remove once packages/server/vitest.config.ts has real config.
+      "files": ["packages/server/vitest.config.ts"],
+      "rules": {
+        "unicorn/no-empty-file": "off"
+      }
+    },
+    {
+      // TODO(2027-01-31): remove once packages/server/drizzle.config.ts exports its config.
+      "files": ["packages/server/drizzle.config.ts"],
+      "rules": {
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

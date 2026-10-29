@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    ".github/workflows/hexlet-check.yml",
+    "pnpm-lock.yaml",
+    "packages/spec/openapi.json",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**",
+    "**/*.md"
+  ]
+}
