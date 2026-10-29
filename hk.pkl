@@ -1,0 +1,132 @@
+// Local checks for the pnpm/TypeScript monorepo.
+// The aggregate command is `mise run check`, which runs `hk check --all`.
+amends "package://github.com/jdx/hk/releases/download/v2.10.0/hk@2.10.0#/Config.pkl"
+
+min_hk_version = "2.10.0"
+fail_fast = false
+
+local oxlint = new Step {
+  glob = List(
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.ts",
+    "**/*.tsx",
+  )
+  exclude = List(
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**",
+  )
+  check = "pnpm exec oxlint --deny-warnings {{files}}"
+  fix = "pnpm exec oxlint --fix {{files}}"
+}
+
+local oxfmt = new Step {
+  glob = List(
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.json",
+    "**/*.jsonc",
+    "**/*.css",
+    "**/*.scss",
+  )
+  exclude = List(
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/spec/openapi.json",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**",
+  )
+  depends = "oxlint"
+  check = "pnpm exec oxfmt --check {{files}}"
+  fix = "pnpm exec oxfmt {{files}}"
+}
+
+local betterleaks = new Step {
+  glob = List("**/*")
+  exclude = List(
+    ".git/**",
+    "**/node_modules/**",
+    "**/dist/**",
+    "pnpm-lock.yaml",
+    "packages/spec/openapi.json",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**",
+  )
+  check = "betterleaks dir --config .betterleaks.toml --no-banner --redact=100 {{files}}"
+}
+
+local jactionlint = new Step {
+  glob = List(
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml",
+    ".github/dependabot.yml",
+    ".github/dependabot.yaml",
+  )
+  check = "jactionlint"
+}
+
+local typecheck = new Step {
+  check = "pnpm -r typecheck"
+}
+
+local test = new Step {
+  check = "pnpm test"
+}
+
+local commitlint = new Step {
+  check = "pnpm exec commitlint --edit {{commit_msg_file}}"
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    stash = "git"
+    steps {
+      ["oxlint"] = oxlint
+      ["oxfmt"] = oxfmt
+      ["betterleaks"] = betterleaks
+      ["jactionlint"] = jactionlint
+    }
+  }
+
+  ["pre-push"] {
+    steps {
+      ["oxlint"] = oxlint
+      ["oxfmt"] = oxfmt
+      ["typecheck"] = typecheck
+      ["test"] = test
+      ["betterleaks"] = betterleaks
+      ["jactionlint"] = jactionlint
+    }
+  }
+
+  ["check"] {
+    steps {
+      ["oxlint"] = oxlint
+      ["oxfmt"] = oxfmt
+      ["typecheck"] = typecheck
+      ["test"] = test
+      ["betterleaks"] = betterleaks
+      ["jactionlint"] = jactionlint
+    }
+  }
+
+  ["fix"] {
+    fix = true
+    steps {
+      ["oxlint"] = oxlint
+      ["oxfmt"] = oxfmt
+    }
+  }
+
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] = commitlint
+    }
+  }
+}

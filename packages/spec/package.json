@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsp compile .",
     "codegen": "tsp compile .",
-    "typecheck": "tsp compile ."
+    "typecheck": "tsp compile . --no-emit"
   },
   "dependencies": {
     "@typespec/compiler": "1.17.0",

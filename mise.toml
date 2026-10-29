@@ -17,8 +17,8 @@ BOOKING_HORIZON_DAYS = "14"
 SLOT_STEP_MINUTES = "15"
 
 [tasks.setup]
-description = "Start PostgreSQL, install dependencies, generate code and migrate"
-run = "docker compose up -d --wait db && pnpm install && pnpm codegen"
+description = "Start PostgreSQL, install dependencies, generate code and install hooks"
+run = "docker compose up -d --wait db && pnpm install && pnpm codegen && hk install"
 
 [tasks.dev]
 description = "Start the API and the web app in watch mode"
@@ -52,11 +52,15 @@ run = "docker compose up --build"
 
 [tasks.check]
 description = "Run every quality check"
-run = "hk check --all --profile security"
+run = "hk check --all"
 
 [tasks."check:fast"]
 description = "Run fast checks on staged files"
-run = "hk check"
+run = "hk run pre-commit --staged --check"
+
+[tasks."hooks:install"]
+description = "Install Git hooks managed by hk"
+run = "hk install"
 
 [tasks.fix]
 description = "Apply safe autofixes"
