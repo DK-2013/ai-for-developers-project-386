@@ -17,3 +17,14 @@ model CalendarConfig {
   today: string;
 }
 
+model HealthStatus {
+  status: string;
+}
+
+@route("/healthz")
+@get
+op healthz(): {
+  @statusCode statusCode: 200;
+  @body body: HealthStatus;
+};
+
