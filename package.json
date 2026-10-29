@@ -15,5 +15,11 @@
     "dev": "pnpm --parallel --filter @calendar/server --filter @calendar/web dev",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0"
   }
 }
