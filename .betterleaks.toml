@@ -1,0 +1,20 @@
+# Local development Postgres credentials are not secrets.
+# Keep this allowlist narrow: only these paths and only the local connection shape.
+# review 2027-01-31: re-check whether these credentials are still local-only.
+[extend]
+useDefault = true
+
+filter = '''
+(
+    filter.matchesAny(attributes["path"], [
+        `(^|/)\.env\.example$`,
+        `(^|/)docker-compose\.yml$`,
+        `(^|/)mise\.toml$`,
+        `(^|/)README\.md$`,
+    ]) &&
+    (
+        filter.findMatch(finding["secret"], `^postgres(?:ql)?://postgres:postgres@(?:localhost|db):5432/`) != "" ||
+        finding["secret"] == "postgres"
+    )
+)
+'''
