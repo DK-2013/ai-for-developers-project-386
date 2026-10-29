@@ -1,5 +1,6 @@
 {
   "name": "call-calendar",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -18,8 +19,10 @@
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
+    "agnix": "0.60.1",
     "oxfmt": "0.75.0",
-    "oxlint": "1.90.0"
+    "oxlint": "1.90.0",
+    "syncpack": "15.3.3"
   },
   "engines": {
     "node": ">=22 <23"

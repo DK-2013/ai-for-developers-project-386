@@ -69,6 +69,56 @@ local jactionlint = new Step {
   check = "jactionlint"
 }
 
+local syncpack = new Step {
+  glob = List("package.json", "packages/*/package.json")
+  check = "pnpm exec syncpack lint"
+}
+
+local hadolint = new Step {
+  glob = List("Dockerfile", "**/Dockerfile", "**/*.Dockerfile")
+  check = "hadolint {{files}}"
+}
+
+local typos = new Step {
+  glob = List("**/*")
+  exclude = List(
+    ".git/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "pnpm-lock.yaml",
+    "packages/spec/openapi.json",
+    "packages/server/src/generated/**",
+    "packages/web/src/sdk/**",
+  )
+  check = "typos {{files}}"
+}
+
+local agnix = new Step {
+  glob = List(
+    "AGENTS.md",
+    "AGENTS.local.md",
+    "AGENTS.override.md",
+    "CLAUDE.md",
+    ".claude/**",
+    ".codex/**",
+    ".cursor/**",
+    ".opencode/**",
+    ".github/copilot-instructions.md",
+    "opencode.json",
+    "opencode.jsonc",
+  )
+  check = "pnpm exec agnix --strict ."
+}
+
+local lychee = new Step {
+  glob = List("**/*.md")
+  exclude = List(
+    "**/dist/**",
+    "**/node_modules/**",
+  )
+  check = "lychee --config lychee.toml --no-progress {{files}}"
+}
+
 local typecheck = new Step {
   check = "pnpm -r typecheck"
 }
@@ -89,6 +139,10 @@ hooks {
     steps {
       ["oxlint"] = oxlint
       ["oxfmt"] = oxfmt
+      ["syncpack"] = syncpack
+      ["hadolint"] = hadolint
+      ["typos"] = typos
+      ["agnix"] = agnix
       ["betterleaks"] = betterleaks
       ["jactionlint"] = jactionlint
     }
@@ -98,6 +152,10 @@ hooks {
     steps {
       ["oxlint"] = oxlint
       ["oxfmt"] = oxfmt
+      ["syncpack"] = syncpack
+      ["hadolint"] = hadolint
+      ["typos"] = typos
+      ["agnix"] = agnix
       ["typecheck"] = typecheck
       ["test"] = test
       ["betterleaks"] = betterleaks
@@ -109,10 +167,20 @@ hooks {
     steps {
       ["oxlint"] = oxlint
       ["oxfmt"] = oxfmt
+      ["syncpack"] = syncpack
+      ["hadolint"] = hadolint
+      ["typos"] = typos
+      ["agnix"] = agnix
       ["typecheck"] = typecheck
       ["test"] = test
       ["betterleaks"] = betterleaks
       ["jactionlint"] = jactionlint
+    }
+  }
+
+  ["links"] {
+    steps {
+      ["lychee"] = lychee
     }
   }
 

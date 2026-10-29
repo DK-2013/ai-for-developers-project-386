@@ -5,6 +5,15 @@ hk = "2.10.0"
 jactionlint = "2.4.0"
 betterleaks = "1.9.0"
 osv-scanner = "2.7.0"
+hadolint = "2.15.1"
+typos = "1.51.1"
+
+[tools."github:lycheeverse/lychee"]
+version = "0.24.2"
+version_prefix = "lychee-v"
+
+[tools."github:lycheeverse/lychee".platforms]
+linux-x64 = { asset_pattern = "lychee-x86_64-unknown-linux-musl.tar.gz" }
 
 [env]
 DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar"
@@ -61,6 +70,10 @@ run = "hk run pre-commit --staged --check"
 [tasks."hooks:install"]
 description = "Install Git hooks managed by hk"
 run = "hk install"
+
+[tasks."check:links"]
+description = "Check links in Markdown files"
+run = "hk run links --all"
 
 [tasks.fix]
 description = "Apply safe autofixes"

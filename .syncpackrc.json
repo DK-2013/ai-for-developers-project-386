@@ -1,0 +1,10 @@
+{
+  "$schema": "https://syncpack.dev/schema.json",
+  "semverGroups": [
+    {
+      "range": "",
+      "dependencies": ["**"],
+      "packages": ["**"]
+    }
+  ]
+}

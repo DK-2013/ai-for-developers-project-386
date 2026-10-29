@@ -3,6 +3,7 @@ node_modules
 dist
 .env
 *.log
+.lycheecache
 coverage
 packages/spec/openapi.json
 packages/server/src/generated

@@ -1,0 +1,10 @@
+[files]
+extend-exclude = [
+  ".git/**",
+  "**/dist/**",
+  "**/node_modules/**",
+  "pnpm-lock.yaml",
+  "packages/spec/openapi.json",
+  "packages/server/src/generated/**",
+  "packages/web/src/sdk/**",
+]
