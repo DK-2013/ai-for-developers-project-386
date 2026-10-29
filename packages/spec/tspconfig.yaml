@@ -1,0 +1,14 @@
+emit:
+  - "@typespec/openapi3"
+  - "@typespec/http-server-js"
+  - "@typespec/http-client-js"
+
+options:
+  "@typespec/openapi3":
+    emitter-output-dir: "{project-root}"
+    output-file: "openapi.json"
+  "@typespec/http-server-js":
+    emitter-output-dir: "{project-root}/../server"
+  "@typespec/http-client-js":
+    emitter-output-dir: "{project-root}/../web/src/sdk"
+    package-name: "@calendar/client"

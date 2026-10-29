@@ -1,0 +1,19 @@
+{
+  "name": "call-calendar",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "build": "pnpm codegen && pnpm --filter @calendar/server build && pnpm --filter @calendar/web build",
+    "codegen": "pnpm --filter @calendar/spec codegen",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @calendar/server db:generate",
+    "db:up": "docker compose up -d db",
+    "dev": "pnpm --parallel --filter @calendar/server --filter @calendar/web dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

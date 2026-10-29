@@ -1,0 +1,47 @@
+[tools]
+node = "22.23.4"
+pnpm = "10.34.9"
+
+[env]
+DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar"
+PORT = "3000"
+OWNER_TIMEZONE = "Europe/Moscow"
+WORKING_HOURS_START = "10:00"
+WORKING_HOURS_END = "18:00"
+WORKING_DAYS = "1,2,3,4,5"
+BOOKING_HORIZON_DAYS = "14"
+SLOT_STEP_MINUTES = "15"
+
+[tasks.setup]
+description = "Start PostgreSQL, install dependencies, generate code and migrate"
+run = "docker compose up -d --wait db && pnpm install && pnpm codegen"
+
+[tasks.dev]
+description = "Start the API and the web app in watch mode"
+depends = ["db:up"]
+run = "pnpm dev"
+
+[tasks.codegen]
+description = "Generate OpenAPI, server router and client SDK from TypeSpec"
+run = "pnpm codegen"
+
+[tasks."db:up"]
+description = "Start PostgreSQL"
+run = "docker compose up -d --wait db"
+
+[tasks."db:down"]
+description = "Stop local containers"
+run = "docker compose down"
+
+[tasks.test]
+description = "Run unit and integration tests"
+depends = ["db:up"]
+run = "pnpm test"
+
+[tasks.build]
+description = "Build server and web"
+run = "pnpm build"
+
+[tasks."docker:up"]
+description = "Build and run the whole app in Docker"
+run = "docker compose up --build"
