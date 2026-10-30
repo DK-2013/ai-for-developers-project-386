@@ -9,6 +9,7 @@
     "db:down": "docker compose down",
     "db:generate": "pnpm --filter @calendar/server db:generate",
     "db:up": "docker compose up -d db",
+    "deps:check": "depcruise packages --config dependency-cruiser.cjs",
     "dev": "pnpm --parallel --filter @calendar/server --filter @calendar/web dev",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -20,9 +21,11 @@
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "agnix": "0.60.1",
+    "dependency-cruiser": "18.7.0",
     "oxfmt": "0.75.0",
     "oxlint": "1.90.0",
-    "syncpack": "15.3.3"
+    "syncpack": "15.3.3",
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=22 <23"

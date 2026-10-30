@@ -134,6 +134,10 @@ local typecheck = new Step {
   check = "pnpm -r typecheck"
 }
 
+local depcruise = new Step {
+  check = "pnpm deps:check"
+}
+
 local test = new Step {
   check = "pnpm test"
 }
@@ -169,6 +173,7 @@ hooks {
       ["typos"] = typos
       ["agnix"] = agnix
       ["typecheck"] = typecheck
+      ["depcruise"] = depcruise
       ["test"] = test
       ["betterleaks"] = betterleaks
       ["suppressionDates"] = suppressionDates
@@ -185,6 +190,7 @@ hooks {
       ["typos"] = typos
       ["agnix"] = agnix
       ["typecheck"] = typecheck
+      ["depcruise"] = depcruise
       ["test"] = test
       ["betterleaks"] = betterleaks
       ["suppressionDates"] = suppressionDates
