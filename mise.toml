@@ -11,6 +11,7 @@ osv-scanner = "2.7.0"
 hadolint = "2.15.1"
 shellcheck = "0.11.0"
 typos = "1.51.1"
+vacuum = "0.36.0"
 
 [tools."github:lycheeverse/lychee"]
 version = "0.24.2"
@@ -65,6 +66,7 @@ run = "docker compose up --build"
 
 [tasks.check]
 description = "Run every quality check"
+depends = ["codegen"]
 run = "hk check --all"
 
 [tasks."check:fast"]

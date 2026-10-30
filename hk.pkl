@@ -130,6 +130,14 @@ local lychee = new Step {
   check = "lychee --config lychee.toml --no-progress {{files}}"
 }
 
+// Lint the generated OpenAPI document. Errors fail; warnings are reported only.
+// The document is gitignored, so the tracked TypeSpec source is the trigger;
+// `mise run check` regenerates it before `hk check --all` runs.
+local vacuum = new Step {
+  glob = List("packages/spec/main.tsp")
+  check = "vacuum lint packages/spec/openapi.json --no-banner --no-update-check --fail-severity error"
+}
+
 local typecheck = new Step {
   check = "pnpm -r typecheck"
 }
@@ -158,6 +166,7 @@ hooks {
       ["hadolint"] = hadolint
       ["typos"] = typos
       ["agnix"] = agnix
+      ["vacuum"] = vacuum
       ["betterleaks"] = betterleaks
       ["suppressionDates"] = suppressionDates
       ["jactionlint"] = jactionlint
@@ -172,6 +181,7 @@ hooks {
       ["hadolint"] = hadolint
       ["typos"] = typos
       ["agnix"] = agnix
+      ["vacuum"] = vacuum
       ["typecheck"] = typecheck
       ["depcruise"] = depcruise
       ["test"] = test
@@ -189,6 +199,7 @@ hooks {
       ["hadolint"] = hadolint
       ["typos"] = typos
       ["agnix"] = agnix
+      ["vacuum"] = vacuum
       ["typecheck"] = typecheck
       ["depcruise"] = depcruise
       ["test"] = test

@@ -3,6 +3,7 @@ import "@typespec/openapi3";
 
 using TypeSpec.Http;
 
+@doc("API for booking calls in an owner's calendar.")
 @service(#{ title: "Call Calendar API" })
 @server("http://localhost:3000", "Local server")
 namespace CallCalendar;
