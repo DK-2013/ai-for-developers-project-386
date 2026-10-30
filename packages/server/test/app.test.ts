@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { describe, expect, it } from "vitest";
-import { requestHandler } from "./app.js";
+import { requestHandler } from "../src/app.js";
 
 function createResponse() {
   const chunks: string[] = [];
