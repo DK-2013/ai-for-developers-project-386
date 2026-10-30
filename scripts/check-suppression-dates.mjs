@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 
 // Fixed list of files that may hold suppressions hiding a security finding.
 // Add a file here when a scanner gets a new suppression mechanism.
-const suppressionFiles = [".betterleaks.toml", "osv-scanner.toml"];
+// A suppression is allowed only with `review YYYY-MM-DD: <reason>`; the date must not be in the past.
+const suppressionFiles = [".betterleaks.toml", "osv-scanner.toml", ".oxlintrc.json"];
 const reviewPattern = /review\s+(\d{4}-\d{2}-\d{2})\b(.*)$/gm;
 
 const today = new Date();

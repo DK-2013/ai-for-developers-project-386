@@ -36,7 +36,7 @@
       }
     },
     {
-      // TODO(2027-01-31): remove once packages/server/drizzle.config.ts exports its config.
+      // review 2027-01-31: remove the override once packages/server/drizzle.config.ts exports its config.
       "files": ["packages/server/drizzle.config.ts"],
       "rules": {
         "no-unused-vars": "off"

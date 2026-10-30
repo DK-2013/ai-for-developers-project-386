@@ -59,6 +59,17 @@ local betterleaks = new Step {
   check = "betterleaks dir --config .betterleaks.toml --no-banner --redact=100 {{files}}"
 }
 
+// A suppression may hide a security finding only until its review date.
+local suppressionDates = new Step {
+  glob = List(
+    ".betterleaks.toml",
+    "osv-scanner.toml",
+    ".oxlintrc.json",
+    "scripts/check-suppression-dates.mjs",
+  )
+  check = "node scripts/check-suppression-dates.mjs"
+}
+
 local jactionlint = new Step {
   glob = List(
     ".github/workflows/*.yml",
@@ -144,6 +155,7 @@ hooks {
       ["typos"] = typos
       ["agnix"] = agnix
       ["betterleaks"] = betterleaks
+      ["suppressionDates"] = suppressionDates
       ["jactionlint"] = jactionlint
     }
   }
@@ -159,6 +171,7 @@ hooks {
       ["typecheck"] = typecheck
       ["test"] = test
       ["betterleaks"] = betterleaks
+      ["suppressionDates"] = suppressionDates
       ["jactionlint"] = jactionlint
     }
   }
@@ -174,6 +187,7 @@ hooks {
       ["typecheck"] = typecheck
       ["test"] = test
       ["betterleaks"] = betterleaks
+      ["suppressionDates"] = suppressionDates
       ["jactionlint"] = jactionlint
     }
   }
