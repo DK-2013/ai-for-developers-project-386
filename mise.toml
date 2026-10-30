@@ -30,6 +30,11 @@ WORKING_DAYS = "1,2,3,4,5"
 BOOKING_HORIZON_DAYS = "14"
 SLOT_STEP_MINUTES = "15"
 
+[daemons.db]
+run = "docker compose up db"
+ready_port = 5432
+# stop = "docker compose stop db"
+
 [tasks.setup]
 description = "Start PostgreSQL, install dependencies, generate code and install hooks"
 run = "docker compose up -d --wait db && pnpm install && pnpm codegen && hk install"
@@ -67,6 +72,7 @@ run = "docker compose up --build"
 [tasks.check]
 description = "Run every quality check"
 depends = ["codegen"]
+daemons = ["db"]
 run = "hk check --all"
 
 [tasks."check:fast"]
