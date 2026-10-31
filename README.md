@@ -7,6 +7,8 @@
 Функциональность намеренно ограничена:  
 один владелец календаря, без авторизации и внешних интеграций.
 
+> **Статус:** учебный каркас. Сейчас реализован только `GET /healthz`; остальные use cases и разделы архитектуры ниже описывают целевое состояние. Правила работы с репозиторием — в `AGENTS.md`.
+
 ## Use cases
 
 - Владелец календаря (задан заранее, без авторизации) создаёт типы встреч: название, описание, длительность.
@@ -102,12 +104,6 @@ EXCLUDE USING gist (tstzrange(start_at, end_at, '[)') WITH &&)
 
 | Метод | Путь | Назначение |
 |---|---|---|
-| `GET` | `/api/config` | Таймзона, рабочие часы, шаг, горизонт |
-| `GET` | `/api/meeting-types` | Типы встреч |
-| `POST` | `/api/meeting-types` | Создать тип встречи |
-| `GET` | `/api/meeting-types/{id}/slots` | Свободные слоты на 14 дней |
-| `GET` | `/api/bookings` | Предстоящие встречи владельца |
-| `POST` | `/api/bookings` | Забронировать слот |
 | `GET` | `/healthz` | Проверка живости контейнера |
 
 ## Установка
@@ -119,10 +115,10 @@ git clone https://github.com/DK-2013/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
 
 mise install          # Node 22 и pnpm 10
-mise run setup        # PostgreSQL, зависимости, codegen, миграции
+mise run setup        # PostgreSQL, зависимости, codegen, git-hooks
 ```
 
-`mise run setup` поднимает PostgreSQL в Docker, устанавливает зависимости, генерирует код из TypeSpec и применяет миграции.
+`mise run setup` поднимает PostgreSQL в Docker, устанавливает зависимости, генерирует код из TypeSpec и устанавливает git-hooks.
 
 ## Использование
 
@@ -132,7 +128,7 @@ mise run dev
 
 - Публичная страница записи: <http://localhost:5173>
 - Кабинет владельца: <http://localhost:5173/owner>
-- API напрямую: <http://localhost:3000/api/config>
+- Проверка живости API: <http://localhost:3000/healthz>
 
 Vite проксирует `/api` на сервер, поэтому в development фронтенд и API работают с одного origin.
 
@@ -179,7 +175,7 @@ mise run test
 mise run docker:up
 ```
 
-Приложение будет доступно на <http://localhost:3000>. Внутри образа выполняется многоступенчатая сборка: генерация кода, сборка фронтенда и сервера, затем production-зависимости и запуск `node server/dist/index.js`. Миграции применяются при старте контейнера.
+Приложение будет доступно на <http://localhost:3000>. Внутри образа выполняется многоступенчатая сборка: генерация кода, сборка фронтенда и сервера, затем production-зависимости и запуск `node server/dist/index.js`. В целевом образе миграции применяются при старте контейнера.
 
 ---
 
