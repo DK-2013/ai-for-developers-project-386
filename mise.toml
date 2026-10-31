@@ -4,6 +4,7 @@ experimental = true
 [tools]
 node = "22.23.4"
 pnpm = "10.34.9"
+"npm:@tobilu/qmd" = "latest"
 hk = "2.10.0"
 jactionlint = "2.4.0"
 betterleaks = "1.9.0"
