@@ -27,6 +27,16 @@
       "files": ["packages/web/**/*.{ts,tsx}"],
       "env": {
         "browser": true
+      },
+      "rules": {
+        "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }]
+      }
+    },
+    {
+      // review 2027-06-30: React 19 uses the automatic JSX runtime, so React need not be in scope.
+      "files": ["packages/web/**/*.tsx"],
+      "rules": {
+        "react/react-in-jsx-scope": "off"
       }
     },
     {
