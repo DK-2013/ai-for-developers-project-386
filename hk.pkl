@@ -97,6 +97,8 @@ local typos = new Step {
     "**/dist/**",
     "**/node_modules/**",
     "pnpm-lock.yaml",
+    // Vendored third-party agent skills (mattpocock/skills), not our prose.
+    ".agents/skills/**",
     "packages/spec/openapi.json",
     "packages/server/src/generated/**",
     "packages/web/src/sdk/**",
