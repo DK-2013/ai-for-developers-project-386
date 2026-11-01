@@ -92,3 +92,17 @@ Stop and ask when a task requires:
 - History: linear, no merge commits.
 - Language: README and user-facing docs in Russian; code, comments, agent docs, and commit messages in English.
 - Details: `CODING_STANDARDS.md`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
