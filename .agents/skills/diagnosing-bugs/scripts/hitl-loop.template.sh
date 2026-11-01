@@ -19,13 +19,15 @@ set -euo pipefail
 
 step() {
   printf '\n>>> %s\n' "$1"
-  read -r -p "    [Enter when done] " _
+  printf '    [Enter when done] '
+  read -r _
 }
 
 capture() {
   local var="$1" question="$2" answer
   printf '\n>>> %s\n' "$question"
-  read -r -p "    > " answer
+  printf '    > '
+  read -r answer
   printf -v "$var" '%s' "$answer"
 }
 
