@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from "react-router-dom";
 import { OwnerPage } from "./pages/owner-page";
 import { MeetingTypesPage } from "./pages/meeting-types-page";
+import { BookingPage } from "./pages/booking-page";
 
 function Header() {
   return (
@@ -23,6 +24,7 @@ export function App() {
       <Header />
       <Routes>
         <Route path="/" element={<MeetingTypesPage />} />
+        <Route path="/book/:id" element={<BookingPage />} />
         <Route path="/owner" element={<OwnerPage />} />
       </Routes>
     </div>

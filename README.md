@@ -147,7 +147,7 @@ mise run dev
 - Кабинет владельца: <http://localhost:5173/owner>
 - Проверка живости API: <http://localhost:3000/healthz>
 
-Vite проксирует `/api` на сервер, поэтому в development фронтенд и API работают с одного origin.
+Vite проксирует `/api` на сервер и убирает префикс `/api`, поэтому в development фронтенд и API работают с одного origin.
 
 Полезные задачи:
 
