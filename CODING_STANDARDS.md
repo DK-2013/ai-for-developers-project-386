@@ -13,7 +13,7 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 
 - **No error is swallowed.** `catch {}`, `catch (e) { return null }`, and `.catch(() => {})` without justification are forbidden. For work-after-the-fact steps (closing a connection, rolling back a transaction), use a wrapper that logs the error. If an error truly cannot be acted on, add it to [Known ignored errors](#known-ignored-errors) with a reason; do not leave an inline empty catch.
 
-- **Errors are the standard library's.** Use `Error` with `cause`, `AggregateError`; do not pull in a third-party error library. Wrap with `<operation>: <detail>`, passing the original through `{ cause: err }`. A caller that needs to branch catches a typed error class (e.g. `ValidationError`), not by comparing `message` strings. Domain codes (`409`, `404`) are mapped in one place — at the HTTP boundary.
+- **Errors are the standard library's.** Use `Error` with `cause`, `AggregateError`; do not pull in a third-party error library. Wrap with `<operation>: <detail>`, passing the original through `{ cause: err }`. A caller that needs to branch catches a typed error class (e.g. `ValidationError`), not by comparing `message` strings. Domain codes (`400`, `404`, `409`) are mapped in one place — at the HTTP boundary.
 
 - **Boundaries validate contract types.** Wire types come from `main.tsp` through generated code. Handwritten wire DTOs are forbidden. DB rows, domain objects, and view models are allowed as separate types; map them explicitly at the boundary instead of casting.
 
@@ -24,8 +24,8 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 - **The contract is the source of truth.** `packages/spec/main.tsp` is the only source. Emitters run in parallel and produce `packages/spec/openapi.json`, `packages/server/src/generated/`, and `packages/web/src/sdk/`. `openapi.json` is an artifact, not an input to the JS emitters.
 - **Generated output is never edited.** Those three paths are gitignored. Change `main.tsp`, run `mise run codegen`, and commit only the source change. A commit that edits generated output is invalid; a commit that changes `main.tsp` without running codegen is incomplete.
 - **Server routing uses the generated router.** Do not hand-write routes that duplicate the contract. If generated code does not enforce a constraint, validate it once at the HTTP boundary.
-- **Imports between `server` and `web` are forbidden.** Neither `web → server` nor `server → web`. Circular imports are forbidden. `dependency-cruiser.cjs` enforces both rules. The generated SDK (`@calendar/client`) lives inside `web` and is used by `web`; `server` uses its own generated types. Shared code is generated independently into each package, not imported across the boundary.
-- **The SDK import must be wired, not guessed.** `@calendar/client` is generated into `packages/web/src/sdk`. Use the workspace dependency or path alias configured for `web`; if it is missing, fix the wiring. Never create a second client or copy generated files out of `sdk/`.
+- **Imports between `server` and `web` are forbidden.** Neither `web → server` nor `server → web`. Circular imports are forbidden. `dependency-cruiser.cjs` enforces both rules. The generated SDK (`@calendar/sdk`) lives inside `web` and is used by `web`; `server` uses its own generated types. Shared code is generated independently into each package, not imported across the boundary.
+- **The SDK import must be wired, not guessed.** `@calendar/sdk` is generated into `packages/web/src/sdk`. Use the workspace dependency or path alias configured for `web`; if it is missing, fix the wiring. Never create a second client or copy generated files out of `sdk/`.
 
 ## Migrations and database
 

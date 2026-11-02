@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@calendar/sdk": fileURLToPath(new URL("./src/sdk/src/index.ts", import.meta.url)),
     },
   },
   server: {

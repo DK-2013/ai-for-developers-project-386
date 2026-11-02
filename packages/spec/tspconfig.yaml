@@ -11,4 +11,4 @@ options:
     emitter-output-dir: "{project-root}/../server"
   "@typespec/http-client-js":
     emitter-output-dir: "{project-root}/../web/src/sdk"
-    package-name: "@calendar/client"
+    package-name: "@calendar/sdk"

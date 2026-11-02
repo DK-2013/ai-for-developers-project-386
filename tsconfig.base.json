@@ -11,6 +11,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "paths": {
+      "@calendar/sdk": ["./packages/web/src/sdk/src/index.ts"]
+    },
     "declaration": true,
     "sourceMap": true
   }

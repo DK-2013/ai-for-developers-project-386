@@ -23,7 +23,7 @@ If two sources disagree, stop and report the conflict. Do not silently choose on
 
 ## Current scaffold
 
-The repository is an early scaffold, not the full product. Only `/healthz` exists in the contract; server routing is still handwritten; `web` has no app; migrations and the test database are not wired yet. Treat the rest of `README.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
+The repository is an early scaffold, not the full product. The contract declares every operation listed in `README.md`, but only `/healthz` has behavior: the other routes are placeholders behind the generated router. `web` has only the meeting types page; migrations and the test database are not wired yet. Treat the rest of `README.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
 
 ## Structure
 
@@ -36,7 +36,7 @@ pnpm monorepo:
 ## Contract and generated code
 
 - `main.tsp` is the only source of truth for the API.
-- Emitters run in parallel: `@typespec/openapi3` → `packages/spec/openapi.json`; `@typespec/http-server-js` → `packages/server/src/generated/`; `@typespec/http-client-js` → `packages/web/src/sdk/` (`@calendar/client`).
+- Emitters run in parallel: `@typespec/openapi3` → `packages/spec/openapi.json`; `@typespec/http-server-js` → `packages/server/src/generated/`; `@typespec/http-client-js` → `packages/web/src/sdk/` (`@calendar/sdk`).
 - `openapi.json`, `generated/`, and `sdk/` are generated and gitignored. Never edit them; change `main.tsp` and run `mise run codegen`.
 - Do not hand-write wire DTOs that duplicate the contract. Map wire → domain → DB/view at the boundaries.
 - `server` and `web` must not import each other. No circular imports. The generated SDK belongs to `web`; `server` uses its own generated types.

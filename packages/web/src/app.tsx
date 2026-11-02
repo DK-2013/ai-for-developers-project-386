@@ -1,23 +1,30 @@
 import { Link, Route, Routes } from "react-router-dom";
 import { OwnerPage } from "./pages/owner-page";
+import { MeetingTypesPage } from "./pages/meeting-types-page";
 
-function HomePage() {
+function Header() {
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <h1 className="text-2xl font-bold">Календарь звонков</h1>
-      <p className="mt-2 text-muted-foreground">Публичная страница записи появится позже.</p>
-      <Link className="mt-4 inline-block underline" to="/owner">
-        Личный кабинет
-      </Link>
-    </main>
+    <header className="border-b border-border">
+      <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
+        <Link className="text-lg font-semibold" to="/">
+          Календарь звонков
+        </Link>
+        <Link className="text-sm underline" to="/owner">
+          Личный кабинет
+        </Link>
+      </div>
+    </header>
   );
 }
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/owner" element={<OwnerPage />} />
-    </Routes>
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
+      <Routes>
+        <Route path="/" element={<MeetingTypesPage />} />
+        <Route path="/owner" element={<OwnerPage />} />
+      </Routes>
+    </div>
   );
 }
