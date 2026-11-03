@@ -81,7 +81,9 @@ jobs:
           test -n "$(find packages/server/src/generated packages/web/src/sdk -type f -print -quit)"
 
       - name: Run quality checks
-        run: mise run check
+        # PostgreSQL comes from the service above, so skip the mise db daemon and
+        # the codegen dependency (the previous step already generated the code).
+        run: mise run --skip-deps check
 
       - name: Build
         run: mise run build

@@ -34,9 +34,8 @@ BOOKING_HORIZON_DAYS = "14"
 SLOT_STEP_MINUTES = "15"
 
 [daemons.db]
-run = "docker compose up db"
+run = "exec docker compose up db"
 ready_port = 5432
-# stop = "docker compose stop db"
 
 [tasks.setup]
 description = "Start PostgreSQL, install dependencies, generate code and install hooks"
@@ -44,7 +43,7 @@ run = "docker compose up -d --wait db && pnpm install && pnpm codegen && hk inst
 
 [tasks.dev]
 description = "Start the API and the web app in watch mode"
-depends = ["db:up"]
+daemons = ["db"]
 run = "pnpm dev"
 
 [tasks.codegen]
@@ -61,7 +60,7 @@ run = "docker compose down"
 
 [tasks.test]
 description = "Run unit and integration tests"
-depends = ["db:up"]
+daemons = ["db"]
 run = "pnpm test"
 
 [tasks.build]
@@ -73,8 +72,9 @@ description = "Build and run the whole app in Docker"
 run = "docker compose up --build"
 
 [tasks.check]
-description = "Run every quality check (requires PostgreSQL at DATABASE_URL; run `mise run db:up` locally)"
+description = "Run every quality check (starts PostgreSQL via the db daemon)"
 depends = ["codegen"]
+daemons = ["db"]
 run = "hk check --all"
 
 [tasks."check:fast"]

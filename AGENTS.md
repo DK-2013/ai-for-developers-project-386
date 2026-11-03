@@ -46,7 +46,7 @@ pnpm monorepo:
 - Setup once: `mise install`, then `mise run setup` (Postgres, dependencies, codegen, hk hooks). Setup does not run migrations.
 - Develop: `mise run dev` — web :5173, API :3000, Vite proxies `/api`.
 - Test: `mise run test` (starts Postgres). Single file: `pnpm --filter @calendar/server exec vitest run test/app.test.ts`.
-- Full gate: `mise run check` = `mise run codegen` + `hk check --all` (oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, test, betterleaks, suppression-date check, jactionlint). It needs PostgreSQL at `DATABASE_URL`: locally run `mise run db:up` first; CI provides the database as a service.
+- Full gate: `mise run check` = `mise run codegen` + `hk check --all` (oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, test, betterleaks, suppression-date check, jactionlint). It starts the `db` mise daemon (PostgreSQL at `DATABASE_URL`), reusing an already-running one; stop it with `mise daemons stop db`. CI provides PostgreSQL as a service and runs `mise run --skip-deps check`, which skips daemon startup.
 - Fast gate: `mise run check:fast` = `hk run pre-commit --staged --check`. It does not run `codegen`, `typecheck`, `depcruise`, or tests.
 - Autofix: `mise run fix` = `hk fix --all` (oxlint + oxfmt + rumdl). The pre-commit hook runs hk in fix mode over more steps and may rewrite and re-stage files; inspect the diff after it runs.
 - Vulnerabilities: `mise run check:osv` scans lockfiles against the OSV database. It runs on the weekly `security` workflow, not in `mise run check`, because a new advisory can fail it without a change on our side.

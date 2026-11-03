@@ -153,11 +153,13 @@ Vite проксирует `/api` на сервер и убирает префи�
 
 ```bash
 mise run codegen      # перегенерировать OpenAPI, роутер и SDK
-mise run db:up        # поднять PostgreSQL
+mise run db:up        # поднять PostgreSQL вручную
 mise run test         # unit + интеграционные тесты
 mise run build        # собрать сервер и фронтенд
 mise run docker:up    # собрать и запустить всё в Docker
 ```
+
+`mise run test`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через mise-демон `db` и переиспользуют уже запущенный. Остановить базу — `mise daemons stop db` (или `mise run db:down`, чтобы удалить контейнеры).
 
 ## Переменные окружения
 
