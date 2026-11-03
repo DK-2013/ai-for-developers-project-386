@@ -37,6 +37,8 @@ local oxfmt = new Step {
     "**/dist/**",
     "**/node_modules/**",
     "packages/spec/openapi.json",
+    // Written by drizzle-kit; formatting it would dirty the tree after every generate.
+    "packages/server/drizzle/**",
     "packages/server/src/generated/**",
     "packages/web/src/sdk/**",
   )
