@@ -1,8 +1,10 @@
 import { defineConfig, mergeConfig } from "vitest/config";
-import viteConfig from "./vite.config.ts";
+import createViteConfig from "./vite.config.ts";
 
 // Vitest 5 does not load `vite.config.ts` on its own, so the Vite plugins and
 // the `@calendar/sdk` alias are merged in here explicitly.
+const viteConfig = createViteConfig({ command: "serve", mode: "test" });
+
 export default mergeConfig(
   viteConfig,
   defineConfig({

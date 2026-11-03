@@ -1,28 +1,37 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@calendar/sdk": fileURLToPath(new URL("./src/sdk/src/index.ts", import.meta.url)),
-    },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api(?=\/|$)/, ""),
+// Settings live in the repository-root `.env`, shared with the API.
+const envDir = fileURLToPath(new URL("../..", import.meta.url));
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, envDir, "");
+  // Keep the same precedence as the server: process env > `.env` > default.
+  const apiPort = process.env.PORT ?? env.PORT ?? "3000";
+
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@calendar/sdk": fileURLToPath(new URL("./src/sdk/src/index.ts", import.meta.url)),
       },
     },
-  },
-  build: {
-    outDir: "dist",
-    sourcemap: true,
-  },
+    server: {
+      port: 5173,
+      proxy: {
+        "/api": {
+          target: `http://localhost:${apiPort}`,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api(?=\/|$)/, ""),
+        },
+      },
+    },
+    build: {
+      outDir: "dist",
+      sourcemap: true,
+    },
+  };
 });

@@ -9,6 +9,8 @@ filter = '''
         `(^|/)mise\.toml$`,
         `(^|/)README\.md$`,
         `(^|/)\.github/workflows/quality\.yml$`,
+        `(^|/)packages/server/src/config\.ts$`,
+        `(^|/)packages/server/src/config\.test\.ts$`,
     ]) &&
     (
         filter.findMatch(finding["secret"], `^postgres(?:ql)?://postgres:postgres@(?:localhost|db):5432/`) != "" ||

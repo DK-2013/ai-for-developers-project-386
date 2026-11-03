@@ -1,10 +1,11 @@
 import { createServer } from "node:http";
 import { requestHandler } from "./app.js";
+import { loadConfig } from "./config.js";
 
-const port = Number(process.env.PORT ?? "3000");
+const config = loadConfig();
 
 const server = createServer(requestHandler);
 
-server.listen(port, () => {
-  process.stdout.write(`Server listening on http://localhost:${port}\n`);
+server.listen(config.port, () => {
+  process.stdout.write(`Server listening on http://localhost:${config.port}\n`);
 });

@@ -23,16 +23,6 @@ version_prefix = "lychee-v"
 [tools."github:lycheeverse/lychee".platforms]
 linux-x64 = { asset_pattern = "lychee-x86_64-unknown-linux-musl.tar.gz" }
 
-[env]
-DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar"
-PORT = "3000"
-OWNER_TIMEZONE = "Europe/Moscow"
-WORKING_HOURS_START = "10:00"
-WORKING_HOURS_END = "18:00"
-WORKING_DAYS = "1,2,3,4,5"
-BOOKING_HORIZON_DAYS = "14"
-SLOT_STEP_MINUTES = "15"
-
 [daemons.db]
 run = "exec docker compose up db"
 ready_port = 5432

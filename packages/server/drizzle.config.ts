@@ -1,12 +1,7 @@
-import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
-import { fileURLToPath } from "node:url";
+import { loadDotEnv } from "./src/config.js";
 
-config({
-  path: fileURLToPath(new URL("../../.env", import.meta.url)),
-  override: true,
-  quiet: true,
-});
+loadDotEnv();
 
 // `generate` reads only the schema and writes SQL; it never opens a connection,
 // so credentials are not configured until migrations are applied at runtime.

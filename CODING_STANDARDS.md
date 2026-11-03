@@ -21,6 +21,14 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 
 - **Owner-local date/time logic goes through one module.** `packages/server/src/domain/time` is the only place allowed to compute the owner's "today", working window, slot step, DST transitions, or local wall-clock values. Do not scatter `new Date()`, `getHours()`, or ad-hoc timezone math. Use `Temporal` (`temporal-polyfill` is installed). Store instants as `timestamptz` in UTC; use the owner timezone only for local calculation and display. Test the module in isolation from HTTP and the DB.
 
+## Configuration
+
+- **Settings are parsed once, in `packages/server/src/config.ts`.** It owns the defaults and validates every value at startup, listing every problem at once instead of producing a partial config. It is the only place allowed to read `process.env` for application settings: `src/index.ts` receives the typed config and passes values down, and feature code never reads the environment. Owner-local times are parsed into `Temporal.PlainTime`; calculations on them stay in `domain/time`.
+- **Precedence is process environment → `.env` → code defaults.** `.env` is optional and gitignored; `loadDotEnv()` must not override variables that are already set. A missing `.env` is normal, so the defaults in `config.ts` are what the app runs on out of the box.
+- **Product rules fixed by `docs/SPEC.md` are constants, not settings.** The booking horizon and slot step live in `packages/server/src/domain/booking-rules.ts`. Adding an environment variable for a rule the spec fixes starts with a spec change.
+- **One source for the API port.** The dev proxy in `packages/web/vite.config.ts` reads `PORT` from the repository-root `.env` with the same precedence; do not hardcode a second API address. The Docker container keeps a fixed port and overrides `PORT` explicitly.
+- **Tests cover the parser, not `process.env`.** `parseConfig(env)` takes a plain record, so defaults, overrides, and invalid values are tested without mutating the real environment.
+
 ## Contract and generated code
 
 - **The contract is the source of truth.** `packages/spec/main.tsp` is the only source. Emitters run in parallel and produce `packages/spec/openapi.json`, `packages/server/src/generated/`, and `packages/web/src/sdk/`. `openapi.json` is an artifact, not an input to the JS emitters.
