@@ -73,9 +73,8 @@ description = "Build and run the whole app in Docker"
 run = "docker compose up --build"
 
 [tasks.check]
-description = "Run every quality check"
+description = "Run every quality check (requires PostgreSQL at DATABASE_URL; run `mise run db:up` locally)"
 depends = ["codegen"]
-daemons = ["db"]
 run = "hk check --all"
 
 [tasks."check:fast"]
