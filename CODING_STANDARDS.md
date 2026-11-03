@@ -5,10 +5,12 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 ## Code shape
 
 - **Fetching data is separate from using it.** Read a value into a named variable first, then use it:
+
   ```ts
   const slots = await repo.listSlots(range);
   expect(slots).toHaveLength(3);
   ```
+
   Never put a DB call, a promise chain, or a computation inside an `assert`, a function argument, or an `if` condition. Same in production code: `const row = await ...` first, then the `if`/`return` that uses it. A failing test should show which step produced the wrong value.
 
 - **No error is swallowed.** `catch {}`, `catch (e) { return null }`, and `.catch(() => {})` without justification are forbidden. For work-after-the-fact steps (closing a connection, rolling back a transaction), use a wrapper that logs the error. If an error truly cannot be acted on, add it to [Known ignored errors](#known-ignored-errors) with a reason; do not leave an inline empty catch.
@@ -36,14 +38,13 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
   - data backfills that cannot be expressed as a schema change.
 
   Generate these with `drizzle-kit generate --custom`, keep the SQL minimal, and state the reason in the migration. Everything else goes through the generator; do not hand-write ordinary tables, columns, indexes, or constraints.
-
 - **Tables, columns, constraints, indexes, and extensions only.** No triggers, stored procedures, or views. Logic that must run on every write lives in server code inside the same transaction.
 - **Overlap protection is the database's job.** The `EXCLUDE` constraint is the source of truth. Map PostgreSQL error `23P01` to `409 Conflict` at the HTTP boundary. A pre-check before `INSERT` is not a substitute: another request can win the race.
 - **Time is stored as `timestamptz` in UTC.** Owner-local calculations go through `domain/time`; do not store local wall-clock strings as the source of truth.
 
 ## Checks
 
-- **`mise run check` is the full gate.** It runs `mise run codegen` first, then `hk check --all`: oxlint, oxfmt, syncpack, hadolint, typos, agnix, vacuum, typecheck, depcruise, tests, betterleaks, suppression-date check, and jactionlint.
+- **`mise run check` is the full gate.** It runs `mise run codegen` first, then `hk check --all`: oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, tests, betterleaks, suppression-date check, and jactionlint.
 - **`mise run check:fast` is not the full gate.** It runs `hk run pre-commit --staged --check` and skips `codegen`, `typecheck`, `depcruise`, and tests. Use it while iterating; use `mise run check` before pushing.
 - **Formatter is `oxfmt`, linter is `oxlint --deny-warnings`.** ESLint is not configured alongside it.
 - **Disabling a rule is an exception, not a default.** A config-level override needs `review YYYY-MM-DD: <reason>`; an inline `// oxlint-disable` needs the same review-dated reason. `scripts/check-suppression-dates.mjs` enforces the date format and expiry for tracked suppression files. The `no-unused-vars` override in `.oxlintrc.json` is the model, not a precedent for silent disables.

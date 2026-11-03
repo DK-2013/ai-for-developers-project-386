@@ -106,6 +106,18 @@ local typos = new Step {
   check = "typos {{files}}"
 }
 
+local rumdl = new Step {
+  glob = List("**/*.md")
+  exclude = List(
+    ".agents/skills/**",
+    ".idea/**",
+    "**/dist/**",
+    "**/node_modules/**",
+  )
+  check = "rumdl check {{files}}"
+  fix = "rumdl fmt {{files}}"
+}
+
 local agnix = new Step {
   glob = List(
     "AGENTS.md",
@@ -140,6 +152,10 @@ local vacuum = new Step {
   check = "vacuum lint packages/spec/openapi.json --no-banner --no-update-check --fail-severity error"
 }
 
+local knip = new Step {
+  check = "pnpm exec knip --no-progress"
+}
+
 local typecheck = new Step {
   check = "pnpm -r typecheck"
 }
@@ -167,6 +183,7 @@ hooks {
       ["syncpack"] = syncpack
       ["hadolint"] = hadolint
       ["typos"] = typos
+      ["rumdl"] = rumdl
       ["agnix"] = agnix
       ["vacuum"] = vacuum
       ["betterleaks"] = betterleaks
@@ -182,8 +199,10 @@ hooks {
       ["syncpack"] = syncpack
       ["hadolint"] = hadolint
       ["typos"] = typos
+      ["rumdl"] = rumdl
       ["agnix"] = agnix
       ["vacuum"] = vacuum
+      ["knip"] = knip
       ["typecheck"] = typecheck
       ["depcruise"] = depcruise
       ["test"] = test
@@ -200,8 +219,10 @@ hooks {
       ["syncpack"] = syncpack
       ["hadolint"] = hadolint
       ["typos"] = typos
+      ["rumdl"] = rumdl
       ["agnix"] = agnix
       ["vacuum"] = vacuum
+      ["knip"] = knip
       ["typecheck"] = typecheck
       ["depcruise"] = depcruise
       ["test"] = test
@@ -222,6 +243,7 @@ hooks {
     steps {
       ["oxlint"] = oxlint
       ["oxfmt"] = oxfmt
+      ["rumdl"] = rumdl
     }
   }
 

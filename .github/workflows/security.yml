@@ -29,6 +29,9 @@ jobs:
           install: true
           cache: true
 
+      - name: Scan dependencies for vulnerabilities
+        run: mise run check:osv
+
       - name: Scan secrets in git history
         run: betterleaks git . --config .betterleaks.toml --no-banner --redact=100
 

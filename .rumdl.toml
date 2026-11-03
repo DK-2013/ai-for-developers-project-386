@@ -1,0 +1,9 @@
+# Long-form Russian prose and wide tables do not fit a fixed column limit, so
+# MD013 would only produce noise. Everything else follows the defaults.
+[global]
+exclude = [".agents/**", ".idea/**", "node_modules/**", "**/dist/**"]
+disable = ["MD013"]
+
+# README uses <details>/<summary> for collapsible sections.
+[MD033]
+allowed-elements = ["details", "summary"]

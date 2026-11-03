@@ -10,9 +10,10 @@ hk = "2.10.0"
 jactionlint = "2.4.0"
 betterleaks = "1.9.0"
 osv-scanner = "2.7.0"
-shellcheck = "0.11.0"
 hadolint = "2.15.1"
+shellcheck = "0.11.0"
 typos = "1.51.1"
+rumdl = "0.3.2"
 vacuum = "0.36.0"
 
 [tools."github:lycheeverse/lychee"]
@@ -88,6 +89,10 @@ run = "hk install"
 [tasks."check:links"]
 description = "Check links in Markdown files"
 run = "hk run links --all"
+
+[tasks."check:osv"]
+description = "Scan dependencies for known vulnerabilities"
+run = "osv-scanner scan source -r ."
 
 [tasks.fix]
 description = "Apply safe autofixes"

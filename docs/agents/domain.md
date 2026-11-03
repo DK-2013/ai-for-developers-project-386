@@ -13,7 +13,7 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 
 This is a single-context repo:
 
-```
+```text
 /
 ├── GLOSSARY.md
 ├── docs/adr/
