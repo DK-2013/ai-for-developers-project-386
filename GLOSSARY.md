@@ -37,7 +37,7 @@ A booking whose interval overlaps another booking's interval. Touching endpoints
 _Avoid_: Collision, double booking, overlap error
 
 **Booking window**:
-The 14 owner-local calendar days a guest may book into. Starts at midnight today in the owner's time zone and slides forward every day.
+The 14 owner-local calendar days a guest may book into. The half-interval [today 00:00, today + 14 days 00:00) in the owner's time zone: slots exist from today through today+13 inclusive, and the window slides forward every day.
 _Avoid_: Horizon, range, period
 
 **Working hours**:
@@ -51,3 +51,7 @@ _Avoid_: Interval, granularity
 **Owner time zone**:
 The IANA zone that defines the owner's calendar days, working hours, and what "today" means. Instants are always stored and transmitted in UTC.
 _Avoid_: Local time, server time zone, timezone setting
+
+**Guest time zone**:
+The IANA zone of the guest's browser. The guest-facing calendar renders in it, with the owner's zone shown as reference; it never affects the slot grid, which is fixed by the owner's zone.
+_Avoid_: Display zone, user locale

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Call booking app (learning project): one owner publishes meeting types and available slots; guests book a slot without auth. TypeScript monorepo: TypeSpec contract, `node:http` + Drizzle + PostgreSQL server, React + Vite web app. `README.md` (Russian) is the product description; this file is the operating contract for agents.
+Call booking app (learning project): one owner publishes meeting types and available slots; guests book a slot without auth. TypeScript monorepo: TypeSpec contract, `node:http` + Drizzle + PostgreSQL server, React + Vite web app. `docs/SPEC.md` (Russian) is the product specification; this file is the operating contract for agents.
 
 ## Main rules
 
@@ -15,7 +15,7 @@ Call booking app (learning project): one owner publishes meeting types and avail
 ## Precedence
 
 1. `packages/spec/main.tsp` — API shape.
-2. `README.md` (`Rules`, `Checkpoints`) — product behavior.
+2. `docs/SPEC.md` — product behavior.
 3. `CODING_STANDARDS.md` — implementation rules.
 4. Current task.
 
@@ -23,7 +23,7 @@ If two sources disagree, stop and report the conflict. Do not silently choose on
 
 ## Current scaffold
 
-The repository is an early scaffold, not the full product. The contract declares every operation listed in `README.md`, but only `/healthz` has behavior: the other routes are placeholders behind the generated router. `web` has only the meeting types page; migrations and the test database are not wired yet. Treat the rest of `README.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
+The repository is an early scaffold, not the full product. The contract declares every operation listed in `docs/SPEC.md`, but only `/healthz` has behavior: the other routes are placeholders behind the generated router. `web` has only the meeting types page; migrations and the test database are not wired yet. Treat the rest of `docs/SPEC.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
 
 ## Structure
 
@@ -72,7 +72,7 @@ pnpm monorepo:
 - [ ] `mise run check` passes. If it cannot pass, report the exact failing step and error.
 - [ ] Diff is scoped to the task; no unrelated formatting or generated files.
 - [ ] New dependencies, migrations, and public API changes are called out explicitly.
-- [ ] README updated if user-facing behavior changed.
+- [ ] `docs/SPEC.md` updated if user-facing behavior changed.
 - [ ] Commit message follows Conventional Commits if a commit was requested.
 
 ## Stop and ask
