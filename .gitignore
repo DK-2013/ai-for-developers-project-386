@@ -4,6 +4,7 @@ dist
 .env
 *.log
 .lycheecache
+.playwright-mcp
 coverage
 packages/spec/openapi.json
 packages/server/src/generated
