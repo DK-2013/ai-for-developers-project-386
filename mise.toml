@@ -8,7 +8,7 @@ pnpm = "10.34.9"
 "npm:@tobilu/qmd" = "latest"
 "npm:@playwright/mcp" = "0.0.84"
 "npm:chrome-devtools-mcp" = "1.12.0"
-"npm:playwright" = "1.65.0-alpha-2026-10-30"
+"npm:playwright" = "1.64.1"
 hk = "2.10.0"
 jactionlint = "2.4.0"
 betterleaks = "1.9.0"
@@ -57,11 +57,16 @@ daemons = ["db"]
 run = "pnpm test"
 
 [tasks."mcp:browsers"]
-description = "Install the Chromium build used by the browser MCP servers"
-run = "playwright install chromium"
+description = "Install the Chromium builds used by Playwright and the browser MCP servers"
+run = [
+  # @playwright/mcp@0.0.84 bundles Playwright 1.65.0-alpha, which needs chromium-1252.
+  "playwright-mcp install-browser chrome-for-testing",
+  # playwright and @playwright/test 1.64.1 need chromium-1248.
+  "playwright install chromium",
+]
 
 [tasks."mcp:check"]
-description = "Check that both browser MCP servers initialize and Chromium is installed"
+description = "Verify both browser MCP servers handshake and launch Chromium"
 run = "node scripts/mcp-check.mjs"
 
 [tasks.build]
