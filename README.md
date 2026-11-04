@@ -22,7 +22,7 @@
 | Контракт | TypeSpec (`@typespec/http`, `@typespec/openapi3`) |
 | Спецификация | OpenAPI 3, эмиттер `@typespec/openapi3` |
 | Серверные маршруты и типы | `@typespec/http-server-js` |
-| HTTP | Node.js 22, встроенный `http` |
+| HTTP | Node.js 26, встроенный `http` |
 | Клиентский SDK | `@typespec/http-client-js` |
 | База | PostgreSQL 16 |
 | Доступ к данным | Drizzle |
@@ -80,7 +80,7 @@ EXCLUDE USING gist (tstzrange(start_at, end_at, '[)') WITH &&)
 git clone https://github.com/DK-2013/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
 
-mise install          # Node 22 и pnpm 10
+mise install          # Node 26 и pnpm 10
 mise run setup        # PostgreSQL, зависимости, codegen, git-hooks
 ```
 
@@ -137,6 +137,32 @@ mise run test
 ```
 
 - smoke-test web заглушки
+
+## Проверка UI в браузере (MCP)
+
+Для ручной проверки интерфейса из OpenCode подключены два MCP-сервера. Они объявлены в `opencode.json`, запускаются локально и в Docker-образ не входят.
+
+| Сервер | Когда использовать |
+|---|---|
+| Playwright MCP | Навигация по страницам, снимки страницы (snapshot), клики и заполнение форм — когда нужно понять, что видит пользователь. |
+| Chrome DevTools MCP | Консоль, сетевые запросы и производительность — когда нужно разобрать ошибку в браузере или медленную загрузку. |
+
+Понадобится [mise](https://mise.jdx.dev/); Docker для MCP не нужен.
+
+```bash
+mise install            # Node, pnpm и оба MCP-сервера
+mise run mcp:browsers   # установить совместимые сборки Chromium
+mise run mcp:check      # проверить подключение серверов и запуск браузера
+```
+
+`mise run mcp:browsers` устанавливает совместимые сборки Chromium в кеш Playwright. Chrome DevTools MCP использует сборку Chrome for Testing из этого кеша, поэтому системный Google Chrome не обязателен. Указать другой исполняемый файл Chrome или Chrome for Testing можно переменной `CHROME_DEVTOOLS_MCP_CHROME`.
+
+`mise run mcp:check` выполняет реальное рукопожатие MCP (`initialize` и `tools/list`) для обоих серверов и проверяет, что каждый сервер может запустить браузер. Если проверка проходит, серверы готовы к работе.
+
+### Устранение неполадок
+
+- **Браузер не найден.** Выполните `mise run mcp:browsers` и повторите `mise run mcp:check`.
+- **Сервер не подключился.** Запустите `mise run mcp:check`: он покажет, какой сервер вывел `FAILED`, и причину. Проверьте, что `mise install` выполнен, и повторите.
 
 ## Релизы
 
