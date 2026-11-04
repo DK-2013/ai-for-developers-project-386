@@ -90,6 +90,8 @@ Stop and ask when a task requires:
 
 - Formatter: `oxfmt`; linter: `oxlint --deny-warnings`.
 - Commits: Conventional Commits; header, body, and footer lines ≤ 100 characters.
+- Commit references its ticket: the implementation commit closes the issue it implements with
+  `(<n>)`. Sample: `feat: booking free slot (#12)`.
 - History: linear, no merge commits.
 - Language: README and user-facing docs in Russian; code, comments, agent docs, and commit messages in English.
 - Details: `CODING_STANDARDS.md`.
