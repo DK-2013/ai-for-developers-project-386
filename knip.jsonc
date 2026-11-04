@@ -1,5 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Installed by mise (npm:chrome-devtools-mcp), not a package.json dependency.
+  "ignoreBinaries": ["chrome-devtools-mcp"],
   "workspaces": {
     ".": {
       // Invoked from hk.pkl, not from a package script.
