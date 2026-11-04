@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 
-const DEFAULT_TIMEOUT_MS = 30_000;
-const STOP_TIMEOUT_MS = 5_000;
+const INITIALIZE_TIMEOUT_MS = 20_000;
+const TOOL_TIMEOUT_MS = 60_000;
+const STOP_TIMEOUT_MS = 2_000;
 
 function stderrSuffix(stderr) {
   const text = stderr.trim();
@@ -42,14 +43,24 @@ async function stopChild(child) {
   }
 }
 
+function toolErrorText(result) {
+  const text = (result.content ?? [])
+    .map((part) => part.text ?? "")
+    .join("\n")
+    .trim();
+  return text || JSON.stringify(result);
+}
+
 // Performs a real MCP stdio handshake: initialize, notifications/initialized,
-// tools/list. The child is stopped before returning so a check does not leave a
-// server (or a browser) running.
+// tools/list, and optionally one tool call that launches the browser. Browser
+// launch failures come back as result.isError, not as JSON-RPC errors.
 export async function initializeMcpServer({
   name,
   command,
   args = [],
-  timeoutMs = DEFAULT_TIMEOUT_MS,
+  tool,
+  initializeTimeoutMs = INITIALIZE_TIMEOUT_MS,
+  toolTimeoutMs = TOOL_TIMEOUT_MS,
 }) {
   const child = spawn(command, args, { stdio: ["pipe", "pipe", "pipe"], env: process.env });
   const pending = new Map();
@@ -57,6 +68,10 @@ export async function initializeMcpServer({
   let stderr = "";
   let settled = false;
   let failureError;
+
+  function send(message) {
+    child.stdin.write(`${JSON.stringify(message)}\n`);
+  }
 
   function fail(error) {
     if (settled) {
@@ -73,7 +88,7 @@ export async function initializeMcpServer({
   function onExit(code, signal) {
     fail(
       new Error(
-        `${name}: server exited before the handshake completed ` +
+        `${name}: server exited before the check completed ` +
           `(code ${String(code)}, signal ${String(signal)})${stderrSuffix(stderr)}`,
       ),
     );
@@ -112,6 +127,25 @@ export async function initializeMcpServer({
         continue;
       }
 
+      if (message.method) {
+        if (message.id === undefined || message.id === null) {
+          continue;
+        }
+
+        // Servers may ask the client for roots. Answering keeps them from
+        // stalling before the browser tool call.
+        if (message.method === "roots/list") {
+          send({ jsonrpc: "2.0", id: message.id, result: { roots: [] } });
+        } else {
+          send({
+            jsonrpc: "2.0",
+            id: message.id,
+            error: { code: -32601, message: `Method not found: ${message.method}` },
+          });
+        }
+        continue;
+      }
+
       if (message.id === undefined || message.id === null) {
         continue;
       }
@@ -131,7 +165,7 @@ export async function initializeMcpServer({
     }
   });
 
-  function request(method, params) {
+  function request(method, params, timeoutMs = initializeTimeoutMs) {
     if (failureError) {
       return Promise.reject(failureError);
     }
@@ -141,7 +175,7 @@ export async function initializeMcpServer({
     const response = new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject, method });
     });
-    child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
+    send({ jsonrpc: "2.0", id, method, params });
     return withTimeout(
       response,
       timeoutMs,
@@ -152,25 +186,39 @@ export async function initializeMcpServer({
   try {
     const initialization = await request("initialize", {
       protocolVersion: "2025-06-18",
-      capabilities: {},
-      clientInfo: { name: "call-calendar-mcp-check", version: "0.0.0" },
+      capabilities: { roots: { listChanged: true } },
+      clientInfo: { name: "call-calendar-mcp-check", version: "1.0.0" },
     });
 
-    child.stdin.write(
-      `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
-    );
-    const tools = await request("tools/list", {});
-
-    const toolCount = tools?.tools?.length ?? 0;
-    if (toolCount === 0) {
+    send({ jsonrpc: "2.0", method: "notifications/initialized" });
+    const listed = await request("tools/list", {});
+    const tools = listed?.tools ?? [];
+    if (tools.length === 0) {
       throw new Error(`${name}: tools/list returned no tools`);
+    }
+
+    if (tool) {
+      const knownTool = tools.some((candidate) => candidate.name === tool.name);
+      if (!knownTool) {
+        throw new Error(`${name}: tools/list did not include ${tool.name}`);
+      }
+
+      const called = await request(
+        "tools/call",
+        { name: tool.name, arguments: tool.arguments },
+        toolTimeoutMs,
+      );
+      if (called?.isError) {
+        throw new Error(`${name}: ${tool.name} failed: ${toolErrorText(called)}`);
+      }
     }
 
     return {
       name,
       protocolVersion: initialization?.protocolVersion,
       serverInfo: initialization?.serverInfo,
-      tools: toolCount,
+      tools: tools.length,
+      tool: tool?.name,
     };
   } finally {
     settled = true;
