@@ -46,8 +46,8 @@ pnpm monorepo:
 - Setup once: `mise install`, then `mise run setup` (Postgres, dependencies, codegen, hk hooks). Setup does not run migrations.
 - Develop: `mise run dev` — web :5173, API :3000, Vite proxies `/api`.
 - Test: `mise run test` (starts Postgres). Single file: `pnpm --filter @calendar/server exec vitest run test/app.test.ts`.
-- Browser install: `mise run mcp:browsers` installs the Chromium build used by the browser MCP servers.
-- Browser diagnostics: `mise run mcp:check` verifies that both browser MCP servers initialize and Chromium is installed.
+- Browser install: `mise run mcp:browsers` installs the Chromium builds used by Playwright Test and the browser MCP servers.
+- Browser diagnostics: `mise run mcp:check` verifies that both browser MCP servers initialize, launch a browser, and expose tools.
 - Full gate: `mise run check` = `mise run codegen` + `hk check --all` (oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, test, betterleaks, suppression-date check, jactionlint). It starts the `db` mise daemon (PostgreSQL at `DATABASE_URL`), reusing an already-running one; stop it with `mise daemons stop db`. CI provides PostgreSQL as a service and runs `mise run --skip-deps check`, which skips daemon startup.
 - Fast gate: `mise run check:fast` = `hk run pre-commit --staged --check`. It does not run `codegen`, `typecheck`, `depcruise`, or tests.
 - Autofix: `mise run fix` = `hk fix --all` (oxlint + oxfmt + rumdl). The pre-commit hook runs hk in fix mode over more steps and may rewrite and re-stage files; inspect the diff after it runs.
@@ -60,7 +60,7 @@ pnpm monorepo:
 - Start the app with `mise run dev` (web :5173, API :3000) before checking the UI in a browser.
 - Playwright MCP: navigation, clicking, form filling, and page snapshots.
 - Chrome DevTools MCP: console messages, network requests, and performance traces.
-- Follow `docs/agents/browser-checks.md` for the checklist, expected results, and what to inspect.
+- Follow the [browser checks](docs/agents/browser-checks.md) checklist for expected results and what to inspect.
 - MCP is for manual and agent verification, not a test runner. Automated checks run through `mise run test` (Vitest) and `mise run test:e2e` (Playwright Test).
 
 ## Hard rules
