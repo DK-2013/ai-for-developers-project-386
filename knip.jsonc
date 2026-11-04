@@ -4,6 +4,8 @@
     ".": {
       // Invoked from hk.pkl, not from a package script.
       "ignoreDependencies": ["agnix", "syncpack"],
+      // Invoked from opencode.json as the chrome-devtools MCP command.
+      "entry": ["scripts/chrome-devtools-mcp.mjs"],
     },
     "packages/spec": {
       // TypeSpec emitters are declared in tspconfig.yaml, not imported from TypeScript.

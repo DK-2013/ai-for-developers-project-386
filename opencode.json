@@ -9,6 +9,10 @@
       "playwright": {
         "type": "local",
         "command": ["pnpm", "dlx", "@playwright/mcp@0.0.84", "--browser", "chromium"]
+      },
+      "chrome-devtools": {
+        "type": "local",
+        "command": ["node", "scripts/chrome-devtools-mcp.mjs"]
       }
     }
   }
