@@ -137,6 +137,16 @@ mise run test
 
 - smoke-test web заглушки
 
+## Релизы
+
+Версионируется только корневой пакет `call-calendar`: релиз — это тег `vX.Y.Z`, GitHub Release и `CHANGELOG.md` в корне. Пакеты `@calendar/*` остаются `private` с версией `0.0.0`: они не публикуются и отдельно не версионируются. Решение зафиксировано в [ADR 0005](docs/adr/0005-release-versioning.md).
+
+Релизы готовит [release-please](https://github.com/googleapis/release-please). Workflow `.github/workflows/release-please.yml` запускается на push в `main`, читает Conventional Commits и открывает или обновляет release PR `chore(main): release X.Y.Z`. PR меняет только версию в корневом `package.json` и `CHANGELOG.md`; вручную их не правят. Мерж release PR (squash или rebase, без merge-коммита) создаёт тег `vX.Y.Z` и GitHub Release.
+
+До версии `1.0.0` включён `bump-minor-pre-major`: breaking change (`!` или `BREAKING CHANGE`) повышает minor, а не major. `feat` повышает minor, `fix` и `perf` — patch. Первый release PR соберёт всю историю, потому что тегов ещё нет; дальше в CHANGELOG попадают только новые коммиты.
+
+Workflow запрашивает `contents: write`, `issues: write` и `pull-requests: write`; остальные workflow свои права не меняют. В настройках репозитория должно быть разрешено создание PR из Actions: *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests*. Release PR, созданные встроенным `GITHUB_TOKEN`, не запускают `quality` и `hexlet-check`. Если проверки на release PR нужны, добавьте секрет `RELEASE_PLEASE_TOKEN` — fine-grained PAT с доступом к contents и pull requests; workflow использует его вместо `github.token`.
+
 ## Docker
 
 ```bash
