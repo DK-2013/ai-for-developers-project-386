@@ -18,10 +18,10 @@ model MeetingType {
   @maxLength(2000) description?: string;
 
   /**
-   * Slot length in minutes. Must be a multiple of five; the upper bound is a
-   * sanity check, not the length of the owner's working day.
+   * Slot length in minutes. Must be a multiple of fifteen and at least 15; the
+   * upper bound is a sanity check, not the length of the owner's working day.
    */
-  @minValue(5) @maxValue(1440) durationMinutes: int32;
+  @minValue(15) @maxValue(1440) durationMinutes: int32;
 }
 
 model MeetingTypeList {
@@ -31,7 +31,7 @@ model MeetingTypeList {
 model CreateMeetingTypeRequest {
   @maxLength(200) name: string;
   @maxLength(2000) description?: string;
-  @minValue(5) @maxValue(1440) durationMinutes: int32;
+  @minValue(15) @maxValue(1440) durationMinutes: int32;
 }
 
 model Slot {
