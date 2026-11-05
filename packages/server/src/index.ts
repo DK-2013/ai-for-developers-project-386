@@ -6,6 +6,7 @@ import { systemClock } from "./clock.js";
 import { loadConfig } from "./config.js";
 import { runMigrations } from "./db/migrate.js";
 import { schema } from "./db/schema.js";
+import { seedDefaultMeetingType } from "./db/seed.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -15,6 +16,10 @@ async function main(): Promise<void> {
   if (config.migrateOnStart) {
     await runMigrations(db);
   }
+
+  // Seeding is unconditional: the default type must exist even when the
+  // schema is managed outside the process, and a failure aborts startup.
+  await seedDefaultMeetingType(db);
 
   const requestHandler = createRequestHandler({
     db,
