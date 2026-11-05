@@ -24,8 +24,6 @@ export type MeetingTypeRepository = {
   list(): Promise<MeetingType[]>;
 };
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export function createMeetingTypeRepository(db: Database): MeetingTypeRepository {
   return {
     async create(input) {
@@ -49,10 +47,6 @@ export function createMeetingTypeRepository(db: Database): MeetingTypeRepository
     },
 
     async findById(id) {
-      if (!UUID_PATTERN.test(id)) {
-        return undefined;
-      }
-
       const rows = await db.select().from(meetingTypes).where(eq(meetingTypes.id, id));
       const row = rows.at(0);
 

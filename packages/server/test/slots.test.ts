@@ -242,6 +242,26 @@ describe("GET /meeting-types/{id}/slots", () => {
     }
   });
 
+  it("anchors the grid to local quarter-hours when the working day starts off-grid", async () => {
+    const owner: OwnerConfig = {
+      timeZone: "UTC",
+      workingHours: {
+        start: Temporal.PlainTime.from("10:07"),
+        end: Temporal.PlainTime.from("18:00"),
+      },
+      workingDays: [1, 2, 3, 4, 5],
+    };
+
+    await withServer(owner, async (url) => {
+      now = new Date("2026-01-05T00:00:00.000Z");
+      const response = await getSlots(DEFAULT_MEETING_TYPE_ID, url);
+      const first = response.body.slots.at(0);
+      const firstLocal = first === undefined ? undefined : localTime(first.startAt, "UTC");
+
+      expect(firstLocal?.toPlainTime().toString()).toBe("10:15:00");
+    });
+  });
+
   it("keeps a 30-minute meeting before the end of the working day", async () => {
     const meetingTypeId = await createMeetingType(30);
     const response = await getSlots(meetingTypeId);

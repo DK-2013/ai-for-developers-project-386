@@ -3,14 +3,8 @@ import { array, assert, integer, property, record, type Arbitrary } from "fast-c
 import { describe, expect, it } from "vitest";
 import type { OwnerConfig } from "../config.js";
 import { BOOKING_HORIZON_DAYS, SLOT_STEP_MINUTES } from "./booking-rules.js";
-import {
-  bookableSlot,
-  computeSlots,
-  type ComputeSlotsInput,
-  type InstantInterval,
-  type Slot,
-} from "./slots.js";
-import { localTimeWindow } from "./time/index.js";
+import { bookableSlot, computeSlots, type ComputeSlotsInput, type Slot } from "./slots.js";
+import { localTimeWindow, type InstantInterval } from "./time/index.js";
 
 const MOSCOW = "Europe/Moscow";
 
@@ -62,11 +56,13 @@ describe("slot engine", () => {
 
     for (const slot of slots) {
       const local = localTimeOf(slot);
-      expect(local.minute % SLOT_STEP_MINUTES).toBe(0);
-      expect(
-        Temporal.PlainTime.compare(local.toPlainTime(), plainTime("10:00")),
-      ).toBeGreaterThanOrEqual(0);
-      expect(Temporal.PlainTime.compare(local.toPlainTime(), plainTime("18:00"))).toBeLessThan(0);
+      const minuteOffset = local.minute % SLOT_STEP_MINUTES;
+      const atOrAfterOpening = Temporal.PlainTime.compare(local.toPlainTime(), plainTime("10:00"));
+      const beforeClosing = Temporal.PlainTime.compare(local.toPlainTime(), plainTime("18:00"));
+
+      expect(minuteOffset).toBe(0);
+      expect(atOrAfterOpening).toBeGreaterThanOrEqual(0);
+      expect(beforeClosing).toBeLessThan(0);
     }
 
     for (let index = 1; index < slots.length; index += 1) {
@@ -78,16 +74,18 @@ describe("slot engine", () => {
       }
 
       const gap = current.start.since(previous.start);
+      const gapRemainder = gap.minutes % SLOT_STEP_MINUTES;
 
-      expect(gap.minutes % SLOT_STEP_MINUTES).toBe(0);
+      expect(gapRemainder).toBe(0);
     }
   });
 
   it("only offers owner working days", () => {
     const slots = compute(instant("2026-01-05T06:00:00Z"), 15);
     const days = new Set(slots.map((slot) => localTimeOf(slot).dayOfWeek));
+    const sortedDays = [...days].toSorted();
 
-    expect([...days].toSorted()).toEqual([1, 2, 3, 4, 5]);
+    expect(sortedDays).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("uses configured working days and hours", () => {
@@ -98,10 +96,11 @@ describe("slot engine", () => {
 
     const slots = compute(instant("2026-01-05T00:00:00Z"), 15, [], owner);
     const localTimes = slots.map((slot) => localTimeOf(slot).toString());
+    const workingDayNumbers = new Set(slots.map((slot) => localTimeOf(slot).dayOfWeek));
 
     expect(localTimes.at(0)).toBe("2026-01-05T09:00:00");
     expect(localTimes.at(-1)).toBe("2026-01-14T10:45:00");
-    expect(new Set(slots.map((slot) => localTimeOf(slot).dayOfWeek))).toEqual(new Set([1, 3]));
+    expect(workingDayNumbers).toEqual(new Set([1, 3]));
   });
 
   it("keeps every meeting inside the working day for 30-minute types", () => {
@@ -110,10 +109,11 @@ describe("slot engine", () => {
       (slot) => localTimeOf(slot).toPlainDate().toString() === "2026-01-05",
     );
     const last = firstDay.at(-1);
+    const duration = last?.end.since(last.start).total("minutes");
 
     expect(last?.start.toString()).toBe("2026-01-05T14:30:00Z");
     expect(last?.end.toString()).toBe("2026-01-05T15:00:00Z");
-    expect(last?.end.since(last.start).total("minutes")).toBe(30);
+    expect(duration).toBe(30);
   });
 
   it("keeps every meeting inside the working day for 45-minute types", () => {
@@ -122,10 +122,11 @@ describe("slot engine", () => {
       (slot) => localTimeOf(slot).toPlainDate().toString() === "2026-01-05",
     );
     const last = firstDay.at(-1);
+    const duration = last?.end.since(last.start).total("minutes");
 
     expect(last?.start.toString()).toBe("2026-01-05T14:15:00Z");
     expect(last?.end.toString()).toBe("2026-01-05T15:00:00Z");
-    expect(last?.end.since(last.start).total("minutes")).toBe(45);
+    expect(duration).toBe(45);
   });
 
   it("keeps 30- and 45-minute ends on the fifteen-minute grid", () => {
@@ -134,9 +135,11 @@ describe("slot engine", () => {
 
       for (const slot of slots) {
         const end = slot.end.toZonedDateTimeISO(MOSCOW).toPlainDateTime();
+        const minuteOffset = end.minute % SLOT_STEP_MINUTES;
+        const duration = slot.end.since(slot.start).total("minutes");
 
-        expect(end.minute % SLOT_STEP_MINUTES).toBe(0);
-        expect(slot.end.since(slot.start).total("minutes")).toBe(durationMinutes);
+        expect(minuteOffset).toBe(0);
+        expect(duration).toBe(durationMinutes);
       }
     }
   });
@@ -204,36 +207,70 @@ function arbitraryOccupied(): Arbitrary<InstantInterval[]> {
   );
 }
 
+/**
+ * An independent model built from the spec predicates: enumerate every
+ * quarter-hour wall time in the owner's zone, then keep the ones that fall on
+ * a working day, fit the working hours, lie in the future and window, and do
+ * not overlap a booking. It deliberately does not reuse the production
+ * window, grid, or overlap helpers.
+ */
 function bruteForceSlots(input: ComputeSlotsInput): Slot[] {
-  const today = input.now.toZonedDateTimeISO(input.owner.timeZone).toPlainDate();
+  const { now, owner, durationMinutes, occupied } = input;
+  const timeZone = owner.timeZone;
+  const today = now.toZonedDateTimeISO(timeZone).toPlainDate();
+  const windowStart = today.toZonedDateTime({ timeZone }).toInstant();
+  const windowEndDate = today.add({ days: BOOKING_HORIZON_DAYS });
+  const windowEnd = windowEndDate.toZonedDateTime({ timeZone }).toInstant();
   const slots: Slot[] = [];
 
   for (let offset = 0; offset < BOOKING_HORIZON_DAYS; offset += 1) {
     const date = today.add({ days: offset });
 
-    if (!input.owner.workingDays.includes(date.dayOfWeek)) {
+    if (!owner.workingDays.includes(date.dayOfWeek)) {
       continue;
     }
 
-    const window = localTimeWindow(date, input.owner.timeZone, input.owner.workingHours);
-    let start = window.start;
+    const dayEnd = date
+      .toZonedDateTime({ timeZone, plainTime: owner.workingHours.end })
+      .toInstant();
 
-    while (
-      Temporal.Instant.compare(start.add({ minutes: input.durationMinutes }), window.end) <= 0
-    ) {
-      const end = start.add({ minutes: input.durationMinutes });
-      const inFuture = Temporal.Instant.compare(start, input.now) > 0;
-      const overlaps = input.occupied.some(
-        (interval) =>
-          Temporal.Instant.compare(start, interval.end) < 0 &&
-          Temporal.Instant.compare(end, interval.start) > 0,
-      );
+    for (let hour = 0; hour < 24; hour += 1) {
+      for (const minute of [0, 15, 30, 45]) {
+        const slotPlainTime = Temporal.PlainTime.from({ hour, minute });
+        const localStart = date.toZonedDateTime({ timeZone, plainTime: slotPlainTime });
+        const start = localStart.toInstant();
+        const end = start.add({ minutes: durationMinutes });
 
-      if (inFuture && !overlaps) {
-        slots.push({ start, end });
+        if (Temporal.PlainTime.compare(localStart.toPlainTime(), owner.workingHours.start) < 0) {
+          continue;
+        }
+
+        if (Temporal.Instant.compare(start, now) <= 0) {
+          continue;
+        }
+
+        if (Temporal.Instant.compare(start, windowStart) < 0) {
+          continue;
+        }
+
+        if (Temporal.Instant.compare(start, windowEnd) >= 0) {
+          continue;
+        }
+
+        if (Temporal.Instant.compare(end, dayEnd) > 0) {
+          continue;
+        }
+
+        const isOccupied = occupied.some(
+          (interval) =>
+            Temporal.Instant.compare(start, interval.end) < 0 &&
+            Temporal.Instant.compare(end, interval.start) > 0,
+        );
+
+        if (!isOccupied) {
+          slots.push({ start, end });
+        }
       }
-
-      start = start.add({ minutes: SLOT_STEP_MINUTES });
     }
   }
 
@@ -280,6 +317,38 @@ describe("bookable slot", () => {
     expect(bookable).toBeUndefined();
   });
 
+  it("anchors the first slot to a local quarter-hour, not the working-day start", () => {
+    const owner = weekdayOwner({
+      workingHours: { start: plainTime("10:07"), end: plainTime("18:00") },
+    });
+    const slots = compute(instant("2026-01-05T00:00:00Z"), 15, [], owner);
+    const first = slots.at(0);
+    const firstLocal = first?.start.toZonedDateTimeISO(MOSCOW).toPlainTime();
+
+    expect(firstLocal?.toString()).toBe("10:15:00");
+  });
+
+  it("rejects a non-quarter-hour start even when the working day begins then", () => {
+    const owner = weekdayOwner({
+      workingHours: { start: plainTime("10:07"), end: plainTime("18:00") },
+    });
+    const offGrid = bookableSlot({
+      now,
+      owner,
+      durationMinutes: 15,
+      start: instant("2026-01-06T07:07:00Z"),
+    });
+    const onGrid = bookableSlot({
+      now,
+      owner,
+      durationMinutes: 15,
+      start: instant("2026-01-06T07:15:00Z"),
+    });
+
+    expect(offGrid).toBeUndefined();
+    expect(onGrid).toBeDefined();
+  });
+
   it("rejects a start that does not fit before the working day ends", () => {
     const bookable = bookableSlot({
       now,
@@ -292,81 +361,110 @@ describe("bookable slot", () => {
   });
 });
 
+// Each property runs 100 cases of a CPU-heavy pure calculation. The parallel
+// suite can starve a worker, so give these two cases room beyond the default.
+const PROPERTY_TIMEOUT_MS = 15_000;
+
 describe("slot engine properties", () => {
-  it("stays inside the booking window and working day, on the grid, and clear of bookings", () => {
-    assert(
-      property(
-        arbitraryInstant(),
-        arbitraryDurationMinutes(),
-        arbitraryOccupied(),
-        (now, durationMinutes, occupied) => {
-          const input: ComputeSlotsInput = {
-            now,
-            owner: weekdayOwner(),
-            durationMinutes,
-            occupied,
-          };
-          const result = computeSlots(input);
+  it(
+    "stays inside the booking window and working day, on the grid, and clear of bookings",
+    () => {
+      assert(
+        property(
+          arbitraryInstant(),
+          arbitraryDurationMinutes(),
+          arbitraryOccupied(),
+          (now, durationMinutes, occupied) => {
+            const input: ComputeSlotsInput = {
+              now,
+              owner: weekdayOwner(),
+              durationMinutes,
+              occupied,
+            };
+            const result = computeSlots(input);
+            const nowInsideWindowStart = Temporal.Instant.compare(now, result.window.start) >= 0;
+            const nowBeforeWindowEnd = Temporal.Instant.compare(now, result.window.end) < 0;
+            const windowStartBeforeEnd =
+              Temporal.Instant.compare(result.window.start, result.window.end) < 0;
 
-          expect(Temporal.Instant.compare(now, result.window.start)).toBeGreaterThanOrEqual(0);
-          expect(Temporal.Instant.compare(now, result.window.end)).toBeLessThan(0);
-          expect(Temporal.Instant.compare(result.window.start, result.window.end)).toBeLessThan(0);
+            expect(nowInsideWindowStart).toBe(true);
+            expect(nowBeforeWindowEnd).toBe(true);
+            expect(windowStartBeforeEnd).toBe(true);
 
-          for (const slot of result.slots) {
-            expect(Temporal.Instant.compare(slot.start, now)).toBeGreaterThan(0);
-            expect(
-              Temporal.Instant.compare(slot.start, result.window.start),
-            ).toBeGreaterThanOrEqual(0);
-            expect(Temporal.Instant.compare(slot.end, result.window.end)).toBeLessThanOrEqual(0);
-            expect(slot.end.since(slot.start).total("minutes")).toBe(durationMinutes);
+            for (const slot of result.slots) {
+              const startsInFuture = Temporal.Instant.compare(slot.start, now) > 0;
+              const startsInWindow = Temporal.Instant.compare(slot.start, result.window.start) >= 0;
+              const endsInWindow = Temporal.Instant.compare(slot.end, result.window.end) <= 0;
+              const slotDuration = slot.end.since(slot.start).total("minutes");
 
-            const local = slot.start.toZonedDateTimeISO(input.owner.timeZone);
-            expect(input.owner.workingDays).toContain(local.dayOfWeek);
+              expect(startsInFuture).toBe(true);
+              expect(startsInWindow).toBe(true);
+              expect(endsInWindow).toBe(true);
+              expect(slotDuration).toBe(durationMinutes);
 
-            const dayWindow = localTimeWindow(
-              local.toPlainDate(),
-              input.owner.timeZone,
-              input.owner.workingHours,
-            );
+              const local = slot.start.toZonedDateTimeISO(input.owner.timeZone);
+              expect(input.owner.workingDays).toContain(local.dayOfWeek);
 
-            expect(Temporal.Instant.compare(slot.start, dayWindow.start)).toBeGreaterThanOrEqual(0);
-            expect(Temporal.Instant.compare(slot.end, dayWindow.end)).toBeLessThanOrEqual(0);
-            expect(slot.start.since(dayWindow.start).total("minutes") % SLOT_STEP_MINUTES).toBe(0);
+              const dayWindow = localTimeWindow(
+                local.toPlainDate(),
+                input.owner.timeZone,
+                input.owner.workingHours,
+              );
 
-            for (const interval of input.occupied) {
-              const overlaps =
-                Temporal.Instant.compare(slot.start, interval.end) < 0 &&
-                Temporal.Instant.compare(slot.end, interval.start) > 0;
+              const startsInsideWorkingDay =
+                Temporal.Instant.compare(slot.start, dayWindow.start) >= 0;
+              const endsInsideWorkingDay = Temporal.Instant.compare(slot.end, dayWindow.end) <= 0;
+              const minuteOffset = local.minute % SLOT_STEP_MINUTES;
+              const hasSubMinutePart =
+                local.second !== 0 || local.millisecond !== 0 || local.microsecond !== 0;
 
-              expect(overlaps).toBe(false);
+              expect(startsInsideWorkingDay).toBe(true);
+              expect(endsInsideWorkingDay).toBe(true);
+              expect(minuteOffset).toBe(0);
+              expect(hasSubMinutePart).toBe(false);
+
+              for (const interval of input.occupied) {
+                const overlaps =
+                  Temporal.Instant.compare(slot.start, interval.end) < 0 &&
+                  Temporal.Instant.compare(slot.end, interval.start) > 0;
+
+                expect(overlaps).toBe(false);
+              }
             }
-          }
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
+          },
+        ),
+        { numRuns: 100 },
+      );
+    },
+    PROPERTY_TIMEOUT_MS,
+  );
 
-  it("agrees with a brute-force model", () => {
-    assert(
-      property(
-        arbitraryInstant(),
-        arbitraryDurationMinutes(),
-        arbitraryOccupied(),
-        (now, durationMinutes, occupied) => {
-          const input: ComputeSlotsInput = {
-            now,
-            owner: weekdayOwner(),
-            durationMinutes,
-            occupied,
-          };
+  it(
+    "agrees with a brute-force model",
+    () => {
+      assert(
+        property(
+          arbitraryInstant(),
+          arbitraryDurationMinutes(),
+          arbitraryOccupied(),
+          (now, durationMinutes, occupied) => {
+            const input: ComputeSlotsInput = {
+              now,
+              owner: weekdayOwner(),
+              durationMinutes,
+              occupied,
+            };
+            const actual = computeSlots(input).slots;
+            const model = bruteForceSlots(input);
 
-          expect(computeSlots(input).slots).toEqual(bruteForceSlots(input));
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
+            expect(actual).toEqual(model);
+          },
+        ),
+        { numRuns: 100 },
+      );
+    },
+    PROPERTY_TIMEOUT_MS,
+  );
 });
 
 // Guard against accidentally regenerating a fixed window: the engine's window

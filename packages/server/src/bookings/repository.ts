@@ -1,7 +1,7 @@
 import { asc, gt } from "drizzle-orm";
-import { Temporal } from "temporal-polyfill";
 import { isPostgresError } from "../db/errors.js";
 import { bookings, type Database } from "../db/schema.js";
+import { toDate, toInstant } from "../db/time.js";
 import type { Booking, NewBooking } from "./domain.js";
 
 const EXCLUSION_VIOLATION = "23P01";
@@ -15,10 +15,6 @@ export class BookingConflictError extends Error {
 }
 
 type BookingRow = typeof bookings.$inferSelect;
-
-function toInstant(date: Date): Temporal.Instant {
-  return Temporal.Instant.fromEpochMilliseconds(date.getTime());
-}
 
 function toBooking(row: BookingRow): Booking {
   return {
@@ -46,8 +42,8 @@ export function createBookingRepository(db: Database): BookingRepository {
         meetingTypeName: input.meetingTypeName,
         attendeeName: input.attendeeName,
         attendeeEmail: input.attendeeEmail,
-        startAt: new Date(input.startAt.epochMilliseconds),
-        endAt: new Date(input.endAt.epochMilliseconds),
+        startAt: toDate(input.startAt),
+        endAt: toDate(input.endAt),
       };
 
       let rows: BookingRow[];

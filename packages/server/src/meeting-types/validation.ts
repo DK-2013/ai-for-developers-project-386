@@ -6,6 +6,13 @@ export type CreateMeetingTypeValidation =
 
 type JsonRecord = Record<string, unknown>;
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Rejects a meeting type id that cannot exist before it reaches the database. */
+export function isValidMeetingTypeId(id: string): boolean {
+  return UUID_PATTERN.test(id);
+}
+
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -14,7 +14,7 @@ const dateKeyFormat = (timeZone: string): Intl.DateTimeFormat =>
     day: "2-digit",
   });
 
-const dayHeadingFormat = (timeZone: string): Intl.DateTimeFormat =>
+const dayFormat = (timeZone: string): Intl.DateTimeFormat =>
   new Intl.DateTimeFormat("ru-RU", {
     timeZone,
     weekday: "long",
@@ -28,14 +28,6 @@ const timeFormat = (timeZone: string): Intl.DateTimeFormat =>
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-  });
-
-const dayFormat = (timeZone: string): Intl.DateTimeFormat =>
-  new Intl.DateTimeFormat("ru-RU", {
-    timeZone,
-    weekday: "long",
-    day: "numeric",
-    month: "long",
   });
 
 function dateKey(date: Date, format: Intl.DateTimeFormat): string {
@@ -52,7 +44,7 @@ function dateKey(date: Date, format: Intl.DateTimeFormat): string {
  */
 export function groupSlotsByDay(slots: readonly Slot[], timeZone: string): SlotDayGroup[] {
   const keyFormat = dateKeyFormat(timeZone);
-  const headingFormat = dayHeadingFormat(timeZone);
+  const headingFormat = dayFormat(timeZone);
   const groups = new Map<string, Slot[]>();
 
   for (const slot of slots) {
@@ -93,6 +85,6 @@ export function formatSlotDay(date: Date, timeZone: string): string {
 }
 
 /** The browser's IANA time zone, falling back to UTC outside a browser. */
-export function detectGuestTimeZone(): string {
+export function detectBrowserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }

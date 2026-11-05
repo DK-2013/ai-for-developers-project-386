@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { bookingsQuery } from "../api/queries";
 import { MeetingTypeForm } from "../components/meeting-type-form";
 import { UpcomingBookingsView } from "../components/upcoming-bookings-view";
-import { detectGuestTimeZone } from "../lib/slots";
+import { detectBrowserTimeZone } from "../lib/slots";
 
 export function OwnerPage() {
   const bookingsResult = useQuery(bookingsQuery);
-  const timeZone = detectGuestTimeZone();
+  const timeZone = detectBrowserTimeZone();
 
   return (
     <main className="mx-auto max-w-2xl p-6">
