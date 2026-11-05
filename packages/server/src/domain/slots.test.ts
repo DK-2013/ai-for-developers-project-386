@@ -3,7 +3,13 @@ import { array, assert, integer, property, record, type Arbitrary } from "fast-c
 import { describe, expect, it } from "vitest";
 import type { OwnerConfig } from "../config.js";
 import { BOOKING_HORIZON_DAYS, SLOT_STEP_MINUTES } from "./booking-rules.js";
-import { computeSlots, type ComputeSlotsInput, type InstantInterval, type Slot } from "./slots.js";
+import {
+  bookableSlot,
+  computeSlots,
+  type ComputeSlotsInput,
+  type InstantInterval,
+  type Slot,
+} from "./slots.js";
 import { localTimeWindow } from "./time/index.js";
 
 const MOSCOW = "Europe/Moscow";
@@ -233,6 +239,58 @@ function bruteForceSlots(input: ComputeSlotsInput): Slot[] {
 
   return slots;
 }
+
+describe("bookable slot", () => {
+  const now = instant("2026-01-05T10:00:00Z");
+
+  it("accepts every slot the engine generates", () => {
+    const slots = compute(now, 30);
+
+    for (const slot of slots) {
+      const bookable = bookableSlot({
+        now,
+        owner: weekdayOwner(),
+        durationMinutes: 30,
+        start: slot.start,
+      });
+
+      expect(bookable).toEqual(slot);
+    }
+  });
+
+  it("rejects a start in the past", () => {
+    const bookable = bookableSlot({
+      now,
+      owner: weekdayOwner(),
+      durationMinutes: 15,
+      start: instant("2026-01-05T09:45:00Z"),
+    });
+
+    expect(bookable).toBeUndefined();
+  });
+
+  it("rejects a start off the fifteen-minute grid", () => {
+    const bookable = bookableSlot({
+      now,
+      owner: weekdayOwner(),
+      durationMinutes: 15,
+      start: instant("2026-01-06T07:05:00Z"),
+    });
+
+    expect(bookable).toBeUndefined();
+  });
+
+  it("rejects a start that does not fit before the working day ends", () => {
+    const bookable = bookableSlot({
+      now,
+      owner: weekdayOwner(),
+      durationMinutes: 30,
+      start: instant("2026-01-06T14:45:00Z"),
+    });
+
+    expect(bookable).toBeUndefined();
+  });
+});
 
 describe("slot engine properties", () => {
   it("stays inside the booking window and working day, on the grid, and clear of bookings", () => {

@@ -1,3 +1,4 @@
+import type { ApiError, Booking, CreateBookingRequest } from "@calendar/sdk";
 import { CallCalendarClient } from "@calendar/sdk";
 import { queryOptions } from "@tanstack/react-query";
 
@@ -37,4 +38,9 @@ export function slotsQuery(meetingTypeId: string) {
     queryKey: ["meeting-type-slots", meetingTypeId],
     queryFn: () => apiClient.listSlots(meetingTypeId),
   });
+}
+
+/** Books a slot through the generated SDK. Errors come back as `ApiError`. */
+export function createBooking(input: CreateBookingRequest): Promise<Booking | ApiError> {
+  return apiClient.createBooking(input);
 }
