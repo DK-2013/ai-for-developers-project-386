@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client, Pool } from "pg";
 import { runMigrations } from "../../src/db/migrate.js";
+import { prepareDatabase } from "../../src/db/prepare-database.js";
 import { schema, type Database } from "../../src/db/schema.js";
-import { seedDefaultMeetingType } from "../../src/db/seed.js";
 
 const DEFAULT_TEST_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar_test";
 
@@ -12,6 +12,13 @@ export type TestDatabase = {
   url: string;
   reset(): Promise<void>;
   destroy(): Promise<void>;
+};
+
+export type TestDatabaseOptions = {
+  /** Run migrations when the database is created. Defaults to true. */
+  migrateOnStart?: boolean;
+  /** Seed the default meeting type when the database is created. Defaults to true. */
+  seedOnStart?: boolean;
 };
 
 function databaseUrlWithName(url: string, name: string): string {
@@ -51,10 +58,15 @@ async function withAdminClient<T>(operation: (client: Client) => Promise<T>): Pr
   }
 }
 
-export async function createTestDatabase(label: string): Promise<TestDatabase> {
+export async function createTestDatabase(
+  label: string,
+  options: TestDatabaseOptions = {},
+): Promise<TestDatabase> {
   const baseUrl = process.env.TEST_DATABASE_URL ?? DEFAULT_TEST_DATABASE_URL;
   const name = testDatabaseName(label);
   const url = databaseUrlWithName(baseUrl, name);
+  const migrateOnStart = options.migrateOnStart ?? true;
+  const seedOnStart = options.seedOnStart ?? true;
 
   await withAdminClient(async (client) => {
     await client.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
@@ -65,7 +77,11 @@ export async function createTestDatabase(label: string): Promise<TestDatabase> {
   const db = drizzle(pool, { schema });
 
   try {
-    await runMigrations(db);
+    if (seedOnStart) {
+      await prepareDatabase(db, { migrateOnStart });
+    } else if (migrateOnStart) {
+      await runMigrations(db);
+    }
   } catch (error) {
     await pool.end();
     throw new Error(`Prepare test database: ${name}`, { cause: error });
@@ -77,7 +93,7 @@ export async function createTestDatabase(label: string): Promise<TestDatabase> {
     url,
     async reset() {
       await pool.query("TRUNCATE TABLE bookings, meeting_types RESTART IDENTITY CASCADE");
-      await seedDefaultMeetingType(db);
+      await prepareDatabase(db, { migrateOnStart: false });
     },
     async destroy() {
       await pool.end();
