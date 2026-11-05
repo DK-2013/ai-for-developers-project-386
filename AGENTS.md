@@ -23,7 +23,7 @@ If two sources disagree, stop and report the conflict. Do not silently choose on
 
 ## Current scaffold
 
-The repository is an early scaffold, not the full product. The contract declares every operation listed in `docs/SPEC.md`, but only `/healthz` has behavior: the other routes are placeholders behind the generated router. `web` has only the meeting types page; migrations and the test database are not wired yet. Treat the rest of `docs/SPEC.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
+The repository is an early scaffold, not the full product. The contract declares every operation listed in `docs/SPEC.md`. Implemented: `GET /healthz`, `GET /meeting-types`, and `POST /meeting-types` with boundary validation; migrations for both tables including the `bookings_no_overlap` GiST exclusion constraint; a startup seed of one default meeting type; the typed owner config (time zone, working hours/days); the spec-fixed booking-rules constants (14-day horizon, 15-minute step). Still placeholders behind the generated router: `GET /meeting-types/{id}/slots`, `GET /bookings`, and `POST /bookings` — the slot engine and booking flow are not implemented. `web` has the meeting types page, the owner meeting-type form, and stubs for the booking page and the owner's upcoming-bookings list. Treat the rest of `docs/SPEC.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
 
 ## Structure
 
