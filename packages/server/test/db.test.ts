@@ -5,10 +5,13 @@ import { createTestDatabase, type TestDatabase } from "./helpers/database.js";
 
 let database: TestDatabase;
 
-async function insertMeetingType(): Promise<string> {
+async function insertMeetingType(
+  name: string = "Intro call",
+  durationMinutes: number = 30,
+): Promise<string> {
   const rows = await database.db
     .insert(meetingTypes)
-    .values({ name: "Intro call", durationMinutes: 30 })
+    .values({ name, durationMinutes })
     .returning({ id: meetingTypes.id });
   const row = rows.at(0);
 
@@ -65,9 +68,9 @@ describe("database schema", () => {
   });
 
   it("rejects a meeting type whose duration is not a valid slot length", async () => {
-    await expect(
-      database.db.insert(meetingTypes).values({ name: "Bad", durationMinutes: 16 }),
-    ).rejects.toMatchObject({ cause: { code: "23514" } });
+    const insertion = database.db.insert(meetingTypes).values({ name: "Bad", durationMinutes: 16 });
+
+    await expect(insertion).rejects.toMatchObject({ cause: { code: "23514" } });
   });
 
   it("allows touching bookings and rejects overlapping ones", async () => {
@@ -76,8 +79,27 @@ describe("database schema", () => {
     await insertBooking(meetingTypeId, "2026-01-05T10:00:00Z", "2026-01-05T10:30:00Z");
     await insertBooking(meetingTypeId, "2026-01-05T10:30:00Z", "2026-01-05T11:00:00Z");
 
-    await expect(
-      insertBooking(meetingTypeId, "2026-01-05T10:15:00Z", "2026-01-05T10:45:00Z"),
-    ).rejects.toMatchObject({ cause: { code: "23P01" } });
+    const overlappingInsertion = insertBooking(
+      meetingTypeId,
+      "2026-01-05T10:15:00Z",
+      "2026-01-05T10:45:00Z",
+    );
+
+    await expect(overlappingInsertion).rejects.toMatchObject({ cause: { code: "23P01" } });
+  });
+
+  it("rejects overlapping bookings across meeting types", async () => {
+    const introId = await insertMeetingType("Intro call", 30);
+    const consultationId = await insertMeetingType("Consultation", 45);
+
+    await insertBooking(introId, "2026-01-05T10:00:00Z", "2026-01-05T10:30:00Z");
+
+    const overlappingInsertion = insertBooking(
+      consultationId,
+      "2026-01-05T10:15:00Z",
+      "2026-01-05T10:45:00Z",
+    );
+
+    await expect(overlappingInsertion).rejects.toMatchObject({ cause: { code: "23P01" } });
   });
 });

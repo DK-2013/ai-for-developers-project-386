@@ -8,9 +8,11 @@ import { createCallCalendarRouter } from "./generated/http/router.js";
 import type {
   ApiError,
   CreateMeetingTypeRequest,
+  MeetingType as WireMeetingType,
   SlotList,
 } from "./generated/models/all/call-calendar.js";
 import type { CallCalendar } from "./generated/models/all/index.js";
+import type { MeetingType } from "./meeting-types/domain.js";
 import { createMeetingTypeRepository } from "./meeting-types/repository.js";
 import { parseCreateMeetingTypeRequest } from "./meeting-types/validation.js";
 
@@ -27,6 +29,20 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
 
 function apiError(code: ApiError["code"], message: string): ApiError {
   return { code, message };
+}
+
+function toWireMeetingType(meetingType: MeetingType): WireMeetingType {
+  const wire: WireMeetingType = {
+    id: meetingType.id,
+    name: meetingType.name,
+    durationMinutes: meetingType.durationMinutes,
+  };
+
+  if (meetingType.description !== undefined) {
+    wire.description = meetingType.description;
+  }
+
+  return wire;
 }
 
 export function createRequestHandler({
@@ -49,7 +65,7 @@ export function createRequestHandler({
 
       return {
         statusCode: 200 as const,
-        body: { meetingTypes: savedMeetingTypes },
+        body: { meetingTypes: savedMeetingTypes.map(toWireMeetingType) },
       };
     },
 
@@ -67,7 +83,7 @@ export function createRequestHandler({
 
       return {
         statusCode: 201 as const,
-        body: meetingType,
+        body: toWireMeetingType(meetingType),
       };
     },
 
@@ -119,7 +135,9 @@ export function createRequestHandler({
       }
 
       console.error("Unexpected request error", error);
-      sendJson(ctx.response, 500, apiError("invalid_request", "Internal Server Error"));
+      // A 500 is outside the contract, so it deliberately does not reuse ApiError:
+      // its `code` union only describes errors the API promises to return.
+      sendJson(ctx.response, 500, { message: "Internal Server Error" });
     },
   });
 

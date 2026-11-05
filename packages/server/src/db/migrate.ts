@@ -4,9 +4,6 @@ import type { Database } from "./schema.js";
 
 const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
-export async function runMigrations(
-  db: Database,
-  migrationsFolder: string = MIGRATIONS_FOLDER,
-): Promise<void> {
-  await migrate(db, { migrationsFolder });
+export async function runMigrations(db: Database): Promise<void> {
+  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
 }
