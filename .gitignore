@@ -5,6 +5,8 @@ dist
 *.log
 .lycheecache
 .playwright-mcp
+playwright-report
+test-results
 coverage
 packages/spec/openapi.json
 packages/server/src/generated
