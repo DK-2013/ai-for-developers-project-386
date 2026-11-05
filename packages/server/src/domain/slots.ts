@@ -1,14 +1,14 @@
 import { Temporal } from "temporal-polyfill";
 import type { OwnerConfig } from "../config.js";
 import { BOOKING_HORIZON_DAYS, SLOT_STEP_MINUTES } from "./booking-rules.js";
-import { bookingWindow, localTimeWindow, type BookingWindow } from "./time/index.js";
-
-const SLOT_STEP_NANOSECONDS = BigInt(SLOT_STEP_MINUTES) * 60n * 1_000_000_000n;
-
-export type InstantInterval = {
-  start: Temporal.Instant;
-  end: Temporal.Instant;
-};
+import {
+  bookingWindow,
+  firstSlotLocalStart,
+  isOnSlotGrid,
+  localTimeWindow,
+  type BookingWindow,
+  type InstantInterval,
+} from "./time/index.js";
 
 export type Slot = InstantInterval;
 
@@ -42,6 +42,7 @@ type BookableStartContext = {
   now: Temporal.Instant;
   start: Temporal.Instant;
   end: Temporal.Instant;
+  localStart: Temporal.ZonedDateTime;
   window: BookingWindow;
   workingWindow: InstantInterval;
 };
@@ -56,7 +57,7 @@ type BookableStartContext = {
  * pre-check loses the race.
  */
 function isBookableStart(context: BookableStartContext): boolean {
-  const { now, start, end, window, workingWindow } = context;
+  const { now, start, end, localStart, window, workingWindow } = context;
 
   if (Temporal.Instant.compare(start, now) <= 0) {
     return false;
@@ -73,9 +74,7 @@ function isBookableStart(context: BookableStartContext): boolean {
     return false;
   }
 
-  const offsetNanos = start.epochNanoseconds - workingWindow.start.epochNanoseconds;
-
-  if (offsetNanos % SLOT_STEP_NANOSECONDS !== 0n) {
+  if (!isOnSlotGrid(localStart)) {
     return false;
   }
 
@@ -89,7 +88,8 @@ function isBookableStart(context: BookableStartContext): boolean {
 export function bookableSlot(input: BookableSlotInput): Slot | undefined {
   const { now, owner, durationMinutes, start } = input;
   const window = bookingWindow(now, owner.timeZone);
-  const localDate = start.toZonedDateTimeISO(owner.timeZone).toPlainDate();
+  const localStart = start.toZonedDateTimeISO(owner.timeZone);
+  const localDate = localStart.toPlainDate();
 
   if (!owner.workingDays.includes(localDate.dayOfWeek)) {
     return undefined;
@@ -97,7 +97,14 @@ export function bookableSlot(input: BookableSlotInput): Slot | undefined {
 
   const workingWindow = localTimeWindow(localDate, owner.timeZone, owner.workingHours);
   const end = start.add({ minutes: durationMinutes });
-  const context: BookableStartContext = { now, start, end, window, workingWindow };
+  const context: BookableStartContext = {
+    now,
+    start,
+    end,
+    localStart,
+    window,
+    workingWindow,
+  };
 
   return isBookableStart(context) ? { start, end } : undefined;
 }
@@ -122,20 +129,30 @@ export function computeSlots(input: ComputeSlotsInput): SlotEngineResult {
     }
 
     const workingWindow = localTimeWindow(date, owner.timeZone, owner.workingHours);
-    let start = workingWindow.start;
+    let localStart = firstSlotLocalStart(date, owner.timeZone, owner.workingHours);
 
-    while (
-      Temporal.Instant.compare(start.add({ minutes: durationMinutes }), workingWindow.end) <= 0
-    ) {
-      const slot = { start, end: start.add({ minutes: durationMinutes }) };
-      const inFuture = Temporal.Instant.compare(start, now) > 0;
-      const isFree = inFuture && !occupied.some((interval) => overlaps(slot, interval));
+    while (Temporal.Instant.compare(localStart.toInstant(), workingWindow.end) < 0) {
+      const start = localStart.toInstant();
+      const end = start.add({ minutes: durationMinutes });
+      const context: BookableStartContext = {
+        now,
+        start,
+        end,
+        localStart,
+        window,
+        workingWindow,
+      };
 
-      if (isFree) {
-        slots.push(slot);
+      if (isBookableStart(context)) {
+        const slot = { start, end };
+        const isFree = !occupied.some((interval) => overlaps(slot, interval));
+
+        if (isFree) {
+          slots.push(slot);
+        }
       }
 
-      start = start.add({ minutes: SLOT_STEP_MINUTES });
+      localStart = localStart.add({ minutes: SLOT_STEP_MINUTES });
     }
   }
 

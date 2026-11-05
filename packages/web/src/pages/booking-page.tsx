@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { bookingsQuery, createBooking, meetingTypesQuery, slotsQuery } from "../api/queries";
 import { BookingSlotsView, type BookingFormState } from "../components/booking-slots-view";
-import { detectGuestTimeZone } from "../lib/slots";
+import { detectBrowserTimeZone } from "../lib/slots";
 
 const CONFLICT_MESSAGE = "Это время уже занято. Пожалуйста, выберите другой слот.";
 const INVALID_MESSAGE = "Проверьте имя и e-mail: сервер отклонил запрос.";
@@ -14,7 +14,7 @@ type BookingPageProps = {
   guestTimeZone?: string;
 };
 
-export function BookingPage({ guestTimeZone = detectGuestTimeZone() }: BookingPageProps = {}) {
+export function BookingPage({ guestTimeZone = detectBrowserTimeZone() }: BookingPageProps = {}) {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [selectedSlot, setSelectedSlot] = useState<Slot>();

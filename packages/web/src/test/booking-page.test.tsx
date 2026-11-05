@@ -69,6 +69,7 @@ describe("booking page", () => {
     const markup = renderPage(slotList([]));
 
     expect(markup).toContain("Нет свободных слотов в ближайшие 14 дней.");
+    expect(markup).toContain("Часовой пояс владельца: Europe/Moscow");
   });
 
   it("shows the API error when slots cannot be loaded", () => {

@@ -94,7 +94,15 @@ describe("booking flow", () => {
     expect(markup).toContain("16:00");
     expect(markup).toContain("Гость");
     expect(markup).toContain("guest@example.com");
+    expect(markup).toContain("Часовой пояс владельца: Europe/Moscow");
     expect(markup).not.toContain('name="attendeeName"');
     expect(markup).not.toContain('aria-pressed="false"');
+  });
+
+  it("shows the owner time zone reference when there are no free slots", () => {
+    const markup = renderView({ slots: [] });
+
+    expect(markup).toContain("Нет свободных слотов в ближайшие 14 дней.");
+    expect(markup).toContain("Часовой пояс владельца: Europe/Moscow");
   });
 });

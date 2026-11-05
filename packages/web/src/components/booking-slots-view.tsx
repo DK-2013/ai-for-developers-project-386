@@ -109,15 +109,29 @@ function BookingForm({
   );
 }
 
+function TimeZoneReference({ timezone }: { timezone: string }) {
+  return (
+    <p className="text-sm text-muted-foreground">
+      Время в вашем часовом поясе. Часовой пояс владельца: {timezone}.
+    </p>
+  );
+}
+
 function SlotsContent({ props }: { props: Extract<BookingSlotsViewProps, { status: "ready" }> }) {
   if (props.booking.status === "success") {
-    return <SuccessContent booking={props.booking.booking} guestTimeZone={props.guestTimeZone} />;
+    return (
+      <div className="mt-6 space-y-6">
+        <TimeZoneReference timezone={props.timezone} />
+        <SuccessContent booking={props.booking.booking} guestTimeZone={props.guestTimeZone} />
+      </div>
+    );
   }
 
   const groups = groupSlotsByDay(props.slots, props.guestTimeZone);
 
   return (
     <div className="mt-6 space-y-6">
+      <TimeZoneReference timezone={props.timezone} />
       {props.booking.status === "error" ? (
         <p className="text-sm text-muted-foreground" role="alert">
           {props.booking.message}
@@ -134,38 +148,33 @@ function SlotsContent({ props }: { props: Extract<BookingSlotsViewProps, { statu
       {groups.length === 0 ? (
         <p className="text-muted-foreground">Нет свободных слотов в ближайшие 14 дней.</p>
       ) : (
-        <>
-          <p className="text-sm text-muted-foreground">
-            Время в вашем часовом поясе. Часовой пояс владельца: {props.timezone}.
-          </p>
-          {groups.map((group) => (
-            <section key={group.key}>
-              <h2 className="text-lg font-semibold capitalize">{group.heading}</h2>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {group.slots.map((slot) => {
-                  const selected = props.selectedSlot?.startAt.getTime() === slot.startAt.getTime();
+        groups.map((group) => (
+          <section key={group.key}>
+            <h2 className="text-lg font-semibold capitalize">{group.heading}</h2>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {group.slots.map((slot) => {
+                const selected = props.selectedSlot?.startAt.getTime() === slot.startAt.getTime();
 
-                  return (
-                    <li key={slot.startAt.toISOString()}>
-                      <button
-                        aria-pressed={selected}
-                        className={
-                          selected
-                            ? "rounded-md border border-border bg-muted px-3 py-2 text-sm"
-                            : "rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
-                        }
-                        onClick={() => props.onSelectSlot?.(slot)}
-                        type="button"
-                      >
-                        {formatSlotTime(slot.startAt, props.guestTimeZone)}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-        </>
+                return (
+                  <li key={slot.startAt.toISOString()}>
+                    <button
+                      aria-pressed={selected}
+                      className={
+                        selected
+                          ? "rounded-md border border-border bg-muted px-3 py-2 text-sm"
+                          : "rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+                      }
+                      onClick={() => props.onSelectSlot?.(slot)}
+                      type="button"
+                    >
+                      {formatSlotTime(slot.startAt, props.guestTimeZone)}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
       )}
     </div>
   );

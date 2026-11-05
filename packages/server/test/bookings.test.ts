@@ -2,7 +2,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createRequestHandler } from "../src/app.js";
-import { parseConfig } from "../src/config.js";
+import { parseConfig, type OwnerConfig } from "../src/config.js";
 import type { Database } from "../src/db/schema.js";
 import { createTestDatabase, type TestDatabase } from "./helpers/database.js";
 
@@ -28,10 +28,13 @@ let server: Server;
 let baseUrl: string;
 let currentNow = FIXED_NOW;
 
-async function startServer(db: Database): Promise<{ server: Server; baseUrl: string }> {
+async function startServer(
+  db: Database,
+  owner: OwnerConfig = parseConfig({}).owner,
+): Promise<{ server: Server; baseUrl: string }> {
   const requestHandler = createRequestHandler({
     db,
-    owner: parseConfig({}).owner,
+    owner,
     clock: () => currentNow,
   });
   const nextServer = createServer(requestHandler);
@@ -58,6 +61,19 @@ async function stopServer(target: Server): Promise<void> {
   });
 }
 
+async function withServer(
+  owner: OwnerConfig,
+  operation: (url: string) => Promise<void>,
+): Promise<void> {
+  const started = await startServer(database.db, owner);
+
+  try {
+    await operation(started.baseUrl);
+  } finally {
+    await stopServer(started.server);
+  }
+}
+
 async function createMeetingType(name: string, durationMinutes: number): Promise<string> {
   const response = await fetch(`${baseUrl}/meeting-types`, {
     method: "POST",
@@ -70,8 +86,8 @@ async function createMeetingType(name: string, durationMinutes: number): Promise
   return body.id;
 }
 
-async function postBooking(body: unknown): Promise<Response> {
-  const response = await fetch(`${baseUrl}/bookings`, {
+async function postBooking(body: unknown, url: string = baseUrl): Promise<Response> {
+  const response = await fetch(`${url}/bookings`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -208,6 +224,17 @@ describe("POST /bookings", () => {
 
     expect(response.status).toBe(409);
     expect(response.body).toMatchObject({ code: "slot_not_available" });
+  });
+
+  it("returns 409 for a non-quarter-hour start even when the working day begins then", async () => {
+    const owner = parseConfig({ WORKING_HOURS_START: "10:07" }).owner;
+
+    await withServer(owner, async (url) => {
+      const response = await postBooking(bookingRequest({ startAt: "2026-01-06T07:07:00Z" }), url);
+
+      expect(response.status).toBe(409);
+      expect(response.body).toMatchObject({ code: "slot_not_available" });
+    });
   });
 
   it("returns 409 when the meeting does not fit before the working day ends", async () => {

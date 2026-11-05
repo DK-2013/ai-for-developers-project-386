@@ -20,7 +20,7 @@ import type {
 import type { CallCalendar } from "./generated/models/all/index.js";
 import type { MeetingType } from "./meeting-types/domain.js";
 import { createMeetingTypeRepository } from "./meeting-types/repository.js";
-import { parseCreateMeetingTypeRequest } from "./meeting-types/validation.js";
+import { isValidMeetingTypeId, parseCreateMeetingTypeRequest } from "./meeting-types/validation.js";
 import { createSlotRepository } from "./slots/repository.js";
 
 export type RequestHandlerDependencies = {
@@ -36,6 +36,19 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
 
 function apiError(code: ApiError["code"], message: string): ApiError {
   return { code, message };
+}
+
+function meetingTypeNotFound() {
+  return {
+    statusCode: 404 as const,
+    body: apiError("meeting_type_not_found", "Meeting type not found"),
+  };
+}
+
+function currentInstant(clock: Clock): Temporal.Instant {
+  const now = clock();
+
+  return Temporal.Instant.fromEpochMilliseconds(now.getTime());
 }
 
 function toWireMeetingType(meetingType: MeetingType): WireMeetingType {
@@ -109,17 +122,17 @@ export function createRequestHandler({
     },
 
     async listSlots(_ctx, id) {
+      if (!isValidMeetingTypeId(id)) {
+        return meetingTypeNotFound();
+      }
+
       const meetingType = await meetingTypes.findById(id);
 
       if (meetingType === undefined) {
-        return {
-          statusCode: 404 as const,
-          body: apiError("meeting_type_not_found", "Meeting type not found"),
-        };
+        return meetingTypeNotFound();
       }
 
-      const now = clock();
-      const instant = Temporal.Instant.fromEpochMilliseconds(now.getTime());
+      const instant = currentInstant(clock);
       const window = bookingWindow(instant, owner.timeZone);
       const occupied = await slots.listOccupied(window);
       const result = computeSlots({
@@ -143,7 +156,8 @@ export function createRequestHandler({
     },
 
     async listBookings() {
-      const upcoming = await bookings.listUpcoming(clock());
+      const now = clock();
+      const upcoming = await bookings.listUpcoming(now);
 
       return {
         statusCode: 200 as const,
@@ -161,17 +175,17 @@ export function createRequestHandler({
         };
       }
 
+      if (!isValidMeetingTypeId(parsed.value.meetingTypeId)) {
+        return meetingTypeNotFound();
+      }
+
       const meetingType = await meetingTypes.findById(parsed.value.meetingTypeId);
 
       if (meetingType === undefined) {
-        return {
-          statusCode: 404 as const,
-          body: apiError("meeting_type_not_found", "Meeting type not found"),
-        };
+        return meetingTypeNotFound();
       }
 
-      const now = clock();
-      const instant = Temporal.Instant.fromEpochMilliseconds(now.getTime());
+      const instant = currentInstant(clock);
       const slot = bookableSlot({
         now: instant,
         owner,
