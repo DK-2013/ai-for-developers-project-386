@@ -21,5 +21,5 @@
       "@calendar/sdk/*": ["./src/sdk/src/*"]
     }
   },
-  "include": ["src", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "e2e", "playwright.config.ts", "vite.config.ts", "vitest.config.ts"]
 }

@@ -29,7 +29,7 @@
 | Фронтенд | Vite, React, TypeScript, React Router, TanStack Query |
 | UI | shadcn/ui |
 | Стили | Tailwind |
-| Тесты | Vitest |
+| Тесты | Vitest, Playwright Test |
 | Пакеты | pnpm workspaces: `spec`, `server`, `web` |
 | Локальная база | Docker Compose |
 | Toolchain | mise |
@@ -104,11 +104,12 @@ Vite проксирует `/api` на сервер и убирает префи�
 mise run codegen      # перегенерировать OpenAPI, роутер и SDK
 mise run db:up        # поднять PostgreSQL вручную
 mise run test         # unit + интеграционные тесты
+mise run test:e2e     # браузерные проверки через Playwright Test
 mise run build        # собрать сервер и фронтенд
 mise run docker:up    # собрать и запустить всё в Docker
 ```
 
-`mise run test`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через mise-демон `db` и переиспользуют уже запущенный. Остановить базу — `mise daemons stop db` (или `mise run db:down`, чтобы удалить контейнеры).
+`mise run test`, `mise run test:e2e`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через mise-демон `db` и переиспользуют уже запущенный. Остановить базу — `mise daemons stop db` (или `mise run db:down`, чтобы удалить контейнеры).
 
 ## Переменные окружения
 
@@ -133,10 +134,15 @@ mise run docker:up    # собрать и запустить всё в Docker
 ## Тесты
 
 ```bash
-mise run test
+mise run test       # unit + интеграционные тесты (Vitest)
+mise run test:e2e   # браузерные проверки (Playwright Test)
 ```
 
-- smoke-test web заглушки
+`mise run test:e2e` поднимает PostgreSQL, API и Vite, устанавливает Chromium для Playwright и
+проходит сценарии из `packages/web/e2e/`: создание типа встречи владельцем, публичный список и
+навигацию. Отдельный job в CI использует PostgreSQL как сервис и ставит браузер командой
+`playwright install --with-deps chromium`. Ручной чек-лист для проверки UI через MCP описан в
+`docs/agents/browser-checks.md`.
 
 ## Проверка UI в браузере (MCP)
 
