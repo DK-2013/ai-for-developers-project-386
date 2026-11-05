@@ -11,6 +11,7 @@ describe("parseConfig", () => {
     expect(config.owner.workingHours.start.toString()).toBe("10:00:00");
     expect(config.owner.workingHours.end.toString()).toBe("18:00:00");
     expect(config.owner.workingDays).toEqual([1, 2, 3, 4, 5]);
+    expect(config.migrateOnStart).toBe(true);
   });
 
   it("reads overrides and sorts working days", () => {
@@ -61,5 +62,22 @@ describe("parseConfig", () => {
     const env = { PORT: "api", WORKING_DAYS: "0" };
 
     expect(() => parseConfig(env)).toThrow(/PORT[\s\S]*WORKING_DAYS/);
+  });
+
+  it.each([
+    ["true", true],
+    ["TRUE", true],
+    ["1", true],
+    ["false", false],
+    ["False", false],
+    ["0", false],
+  ])("parses MIGRATE_ON_START=%s as %s", (raw, expected) => {
+    const config = parseConfig({ MIGRATE_ON_START: raw });
+
+    expect(config.migrateOnStart).toBe(expected);
+  });
+
+  it("rejects a non-boolean MIGRATE_ON_START", () => {
+    expect(() => parseConfig({ MIGRATE_ON_START: "yes" })).toThrow(/MIGRATE_ON_START/);
   });
 });

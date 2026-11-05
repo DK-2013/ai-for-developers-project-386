@@ -19,9 +19,5 @@
       // through the `@calendar/sdk` alias rather than as a workspace package.
       "ignoreDependencies": ["@typespec/ts-http-runtime", "uri-template"],
     },
-    "packages/server": {
-      // The Drizzle layer is not wired yet; drop these once it imports them.
-      "ignoreDependencies": ["drizzle-orm", "pg", "@types/pg"],
-    },
   },
 }
