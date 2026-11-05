@@ -12,7 +12,7 @@ export function OwnerPage() {
     <main className="mx-auto max-w-2xl p-6">
       <h1 className="text-2xl font-bold">Личный кабинет</h1>
       <p className="mt-2 text-muted-foreground">
-        Учебный каркас: личный кабинет владельца календаря.
+        Создавайте типы встреч и следите за предстоящими звонками.
       </p>
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Предстоящие встречи</h2>

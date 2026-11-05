@@ -1,6 +1,6 @@
 # CODING_STANDARDS.md
 
-Implementation rules for this repository. `AGENTS.md` defines precedence, workflow, and Definition of Done. This file details code-level rules; when a rule has an exception, the exception is written here. The rules describe the target implementation; see `AGENTS.md` (`Current scaffold`) for what is not wired yet.
+Implementation rules for this repository. `AGENTS.md` defines precedence, workflow, and Definition of Done. This file details code-level rules; when a rule has an exception, the exception is written here. These rules apply to the implemented product; see `AGENTS.md` (`Current state`) for what exists today at the system level.
 
 ## Code shape
 
