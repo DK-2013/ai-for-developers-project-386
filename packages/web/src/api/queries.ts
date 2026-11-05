@@ -31,3 +31,10 @@ export const meetingTypesQuery = queryOptions({
   queryKey: ["meeting-types"],
   queryFn: () => apiClient.listMeetingTypes(),
 });
+
+export function slotsQuery(meetingTypeId: string) {
+  return queryOptions({
+    queryKey: ["meeting-type-slots", meetingTypeId],
+    queryFn: () => apiClient.listSlots(meetingTypeId),
+  });
+}
