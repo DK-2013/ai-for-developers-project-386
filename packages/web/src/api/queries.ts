@@ -40,6 +40,11 @@ export function slotsQuery(meetingTypeId: string) {
   });
 }
 
+export const bookingsQuery = queryOptions({
+  queryKey: ["bookings"],
+  queryFn: () => apiClient.listBookings(),
+});
+
 /** Books a slot through the generated SDK. Errors come back as `ApiError`. */
 export function createBooking(input: CreateBookingRequest): Promise<Booking | ApiError> {
   return apiClient.createBooking(input);

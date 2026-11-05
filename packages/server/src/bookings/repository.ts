@@ -1,3 +1,4 @@
+import { asc, gt } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { isPostgresError } from "../db/errors.js";
 import { bookings, type Database } from "../db/schema.js";
@@ -33,6 +34,8 @@ function toBooking(row: BookingRow): Booking {
 
 export type BookingRepository = {
   create(input: NewBooking): Promise<Booking>;
+  /** Bookings that have not ended yet, across all meeting types, by start. */
+  listUpcoming(now: Date): Promise<Booking[]>;
 };
 
 export function createBookingRepository(db: Database): BookingRepository {
@@ -66,6 +69,22 @@ export function createBookingRepository(db: Database): BookingRepository {
       }
 
       return toBooking(row);
+    },
+
+    async listUpcoming(now) {
+      let rows: BookingRow[];
+
+      try {
+        rows = await db
+          .select()
+          .from(bookings)
+          .where(gt(bookings.endAt, now))
+          .orderBy(asc(bookings.startAt), asc(bookings.id));
+      } catch (error) {
+        throw new Error("List upcoming bookings: query failed", { cause: error });
+      }
+
+      return rows.map(toBooking);
     },
   };
 }

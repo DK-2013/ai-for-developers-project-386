@@ -1,16 +1,20 @@
-import type { ApiError, MeetingTypeList, SlotList } from "@calendar/sdk";
+import type { ApiError, BookingList, MeetingTypeList, SlotList } from "@calendar/sdk";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { App } from "../app";
-import { meetingTypesQuery, slotsQuery } from "../api/queries";
+import { bookingsQuery, meetingTypesQuery, slotsQuery } from "../api/queries";
 
 type SlotsSeed = {
   meetingTypeId: string;
   slots: SlotList | ApiError;
 };
 
-export function createQueryClient(seed?: MeetingTypeList, slotsSeed?: SlotsSeed): QueryClient {
+export function createQueryClient(
+  seed?: MeetingTypeList,
+  slotsSeed?: SlotsSeed,
+  bookingsSeed?: BookingList,
+): QueryClient {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -21,6 +25,10 @@ export function createQueryClient(seed?: MeetingTypeList, slotsSeed?: SlotsSeed)
 
   if (slotsSeed) {
     queryClient.setQueryData(slotsQuery(slotsSeed.meetingTypeId).queryKey, slotsSeed.slots);
+  }
+
+  if (bookingsSeed) {
+    queryClient.setQueryData(bookingsQuery.queryKey, bookingsSeed);
   }
 
   return queryClient;
