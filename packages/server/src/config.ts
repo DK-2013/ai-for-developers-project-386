@@ -3,6 +3,7 @@ import { Temporal } from "temporal-polyfill";
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar";
+const DEFAULT_MIGRATE_ON_START = true;
 const DEFAULT_OWNER_TIME_ZONE = "Europe/Moscow";
 const DEFAULT_WORKING_HOURS_START = "10:00";
 const DEFAULT_WORKING_HOURS_END = "18:00";
@@ -18,15 +19,16 @@ type WorkingHours = {
   end: Temporal.PlainTime;
 };
 
-type OwnerConfig = {
+export type OwnerConfig = {
   timeZone: string;
   workingHours: WorkingHours;
   workingDays: readonly number[];
 };
 
-type Config = {
+export type Config = {
   port: number;
   databaseUrl: string;
+  migrateOnStart: boolean;
   owner: OwnerConfig;
 };
 
@@ -101,6 +103,21 @@ function parseDatabaseUrl(raw: string, problems: string[]): string {
   return raw;
 }
 
+function parseBoolean(name: string, raw: string, fallback: boolean, problems: string[]): boolean {
+  const normalized = raw.toLowerCase();
+
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+
+  problems.push(`${name} must be one of true, false, 1, 0, got "${raw}"`);
+  return fallback;
+}
+
 function parseTimeZone(raw: string, problems: string[]): string {
   try {
     const formatter = new Intl.DateTimeFormat("en-US", { timeZone: raw });
@@ -151,6 +168,12 @@ export function parseConfig(env: Env): Config {
     readEnv(env, "DATABASE_URL", DEFAULT_DATABASE_URL),
     problems,
   );
+  const migrateOnStart = parseBoolean(
+    "MIGRATE_ON_START",
+    readEnv(env, "MIGRATE_ON_START", String(DEFAULT_MIGRATE_ON_START)),
+    DEFAULT_MIGRATE_ON_START,
+    problems,
+  );
   const timeZone = parseTimeZone(readEnv(env, "OWNER_TIMEZONE", DEFAULT_OWNER_TIME_ZONE), problems);
   const start = parseTimeOfDay(
     "WORKING_HOURS_START",
@@ -178,6 +201,7 @@ export function parseConfig(env: Env): Config {
   return {
     port,
     databaseUrl,
+    migrateOnStart,
     owner: {
       timeZone,
       workingHours: { start: start.value, end: end.value },

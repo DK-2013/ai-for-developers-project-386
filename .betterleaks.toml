@@ -11,6 +11,7 @@ filter = '''
         `(^|/)\.github/workflows/quality\.yml$`,
         `(^|/)packages/server/src/config\.ts$`,
         `(^|/)packages/server/src/config\.test\.ts$`,
+        `(^|/)packages/server/test/helpers/database\.ts$`,
     ]) &&
     (
         filter.findMatch(finding["secret"], `^postgres(?:ql)?://postgres:postgres@(?:localhost|db):5432/`) != "" ||
