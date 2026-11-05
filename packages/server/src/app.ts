@@ -1,14 +1,18 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Temporal } from "temporal-polyfill";
+import type { Booking } from "./bookings/domain.js";
+import { BookingConflictError, createBookingRepository } from "./bookings/repository.js";
+import { parseCreateBookingRequest } from "./bookings/validation.js";
 import type { Clock } from "./clock.js";
 import type { OwnerConfig } from "./config.js";
 import type { Database } from "./db/schema.js";
-import { computeSlots } from "./domain/slots.js";
+import { bookableSlot, computeSlots } from "./domain/slots.js";
 import { bookingWindow } from "./domain/time/index.js";
 import type { HttpContext } from "./generated/helpers/router.js";
 import { createCallCalendarRouter } from "./generated/http/router.js";
 import type {
   ApiError,
+  Booking as WireBooking,
   CreateMeetingTypeRequest,
   MeetingType as WireMeetingType,
   SlotList,
@@ -48,6 +52,18 @@ function toWireMeetingType(meetingType: MeetingType): WireMeetingType {
   return wire;
 }
 
+function toWireBooking(booking: Booking): WireBooking {
+  return {
+    id: booking.id,
+    meetingTypeId: booking.meetingTypeId,
+    meetingTypeName: booking.meetingTypeName,
+    startAt: booking.startAt,
+    endAt: booking.endAt,
+    attendeeName: booking.attendeeName,
+    attendeeEmail: booking.attendeeEmail,
+  };
+}
+
 export function createRequestHandler({
   db,
   owner,
@@ -55,6 +71,7 @@ export function createRequestHandler({
 }: RequestHandlerDependencies): (request: IncomingMessage, response: ServerResponse) => void {
   const meetingTypes = createMeetingTypeRepository(db);
   const slots = createSlotRepository(db);
+  const bookings = createBookingRepository(db);
 
   const service: CallCalendar<HttpContext> = {
     async healthz() {
@@ -132,10 +149,66 @@ export function createRequestHandler({
       };
     },
 
-    async createBooking() {
+    async createBooking(_ctx, body) {
+      const parsed = parseCreateBookingRequest(body);
+
+      if (!parsed.ok) {
+        return {
+          statusCode: 400 as const,
+          body: apiError("invalid_request", parsed.message),
+        };
+      }
+
+      const meetingType = await meetingTypes.findById(parsed.value.meetingTypeId);
+
+      if (meetingType === undefined) {
+        return {
+          statusCode: 404 as const,
+          body: apiError("meeting_type_not_found", "Meeting type not found"),
+        };
+      }
+
+      const now = clock();
+      const instant = Temporal.Instant.fromEpochMilliseconds(now.getTime());
+      const slot = bookableSlot({
+        now: instant,
+        owner,
+        durationMinutes: meetingType.durationMinutes,
+        start: parsed.value.startAt,
+      });
+
+      if (slot === undefined) {
+        return {
+          statusCode: 409 as const,
+          body: apiError("slot_not_available", "Slot is not available"),
+        };
+      }
+
+      let booking: Booking;
+
+      try {
+        booking = await bookings.create({
+          meetingTypeId: meetingType.id,
+          meetingTypeName: meetingType.name,
+          attendeeName: parsed.value.attendeeName,
+          attendeeEmail: parsed.value.attendeeEmail,
+          startAt: slot.start,
+          endAt: slot.end,
+        });
+      } catch (error) {
+        if (error instanceof BookingConflictError) {
+          return {
+            statusCode: 409 as const,
+            body: apiError("slot_not_available", "Slot is not available"),
+          };
+        }
+
+        throw error;
+      }
+
       return {
-        statusCode: 409 as const,
-        body: apiError("slot_not_available", "Slot is not available"),
+        statusCode: 201 as const,
+        body: toWireBooking(booking),
       };
     },
   };

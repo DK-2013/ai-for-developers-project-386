@@ -30,6 +30,14 @@ const timeFormat = (timeZone: string): Intl.DateTimeFormat =>
     hourCycle: "h23",
   });
 
+const dayFormat = (timeZone: string): Intl.DateTimeFormat =>
+  new Intl.DateTimeFormat("ru-RU", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
 function dateKey(date: Date, format: Intl.DateTimeFormat): string {
   const parts = format.formatToParts(date);
   const value = (type: Intl.DateTimeFormatPartTypes): string =>
@@ -77,6 +85,11 @@ export function groupSlotsByDay(slots: readonly Slot[], timeZone: string): SlotD
 /** Formats a slot's start in the guest's browser time zone. */
 export function formatSlotTime(date: Date, timeZone: string): string {
   return timeFormat(timeZone).format(date);
+}
+
+/** Formats a slot's guest-local calendar day. */
+export function formatSlotDay(date: Date, timeZone: string): string {
+  return dayFormat(timeZone).format(date);
 }
 
 /** The browser's IANA time zone, falling back to UTC outside a browser. */
