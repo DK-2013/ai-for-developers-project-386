@@ -2,8 +2,8 @@
 
 A repeatable UI verification scenario for the call-calendar app. Run it in a real browser before
 merging a UI change, after changing the contract, or when an issue asks for a browser check. It
-covers the public page, the owner cabinet, and navigation. Booking scenarios are listed as pending
-and are added when the booking engine lands.
+covers the public page, the owner cabinet, meeting-type creation, and navigation. Booking scenarios
+are listed as pending and are added when the booking engine lands.
 
 This is a manual check for a human or an agent, not a test suite. Automated browser checks live in
 Playwright Test (`mise run test:e2e`, ticket #18); the MCP servers are developer tools, not a test
@@ -16,7 +16,7 @@ runner.
 | Toolchain | `mise install` | `mise --version` works |
 | Dependencies, codegen, hooks | `mise run setup` | once per clone |
 | Chromium for MCP | `mise run mcp:browsers` | Chromium is installed in the Playwright cache |
-| MCP servers | `mise run mcp:check` | both servers report `connected` and Chromium is found |
+| MCP servers | `mise run mcp:check` | both servers report `connected` and launch a browser |
 | App | `mise run dev` | Vite is ready on <http://localhost:5173> and `curl http://localhost:3000/healthz` returns `{"status":"ok"}` |
 
 `mise run dev` starts the PostgreSQL daemon. If another worktree already owns port 5432, the daemon
@@ -52,13 +52,14 @@ request timing, or a performance trace.
 | Inspect the page | `browser_snapshot()`; the accessibility tree is better than a screenshot for assertions |
 | Wait for text | `browser_wait_for({ text, time: 20 })` |
 | Click | `browser_click({ element, target })` with a ref from the latest snapshot |
+| Type | `browser_type({ element, target, text })` with a ref from the latest snapshot |
 | Console | `browser_console_messages({ level: "warning" })` |
 | Network | `browser_network_requests({ static: false })`; details with `browser_network_request({ index })` |
 | Screenshot | `browser_take_screenshot({ filename: ".playwright-mcp/..." })` |
 
-Refs change after every navigation and DOM update, so take a fresh snapshot before clicking. If MCP
-is unavailable, use Playwright directly with the same locators and waits; do not replace waits with
-sleeps.
+Refs change after every navigation and DOM update, so take a fresh snapshot before clicking or
+typing. If MCP is unavailable, use Playwright directly with the same locators and waits; do not
+replace waits with sleeps.
 
 ## Checklist
 
@@ -91,95 +92,111 @@ the favicon.
 
 **SPEC:** [guest sees meeting types without registration](../SPEC.md#checkpoints).
 
-### 3. Public page: empty meeting-type list
+### 3. Public page: meeting-type list loads
 
 **Action:** from `/`, wait for the final list state. Do not stop at `Загрузка...`.
 
-**Expected:** the heading `Выберите тип встречи` and the paragraph
-`Пока нет доступных типов встреч`. No meeting-type cards are rendered.
+**Expected:** the heading `Выберите тип встречи`. On a database with no meeting types, the paragraph
+`Пока нет доступных типов встреч` appears and no cards are rendered. If types already exist, cards
+are rendered instead; this step passes either way. The error state
+`Не удалось загрузить типы встреч.` is always a failure.
 
 **Console:** no uncaught errors, except the favicon `404` from step 2. A failed query is not an
 excuse for a red console error.
 
-**Network:** `GET /api/meeting-types` returns `200` with `{"meetingTypes":[]}`. No `4xx` or `5xx`
-response for that request.
+**Network:** `GET /api/meeting-types` returns `200`. The body is `{"meetingTypes":[]}` on an empty
+database or contains the saved types. No `4xx` or `5xx` response for that request.
 
 **SPEC:** checkpoint `Гость видит список типов встреч без регистрации` in
 [Checkpoints](../SPEC.md#checkpoints).
 
-**Current scaffold: this step fails.** The page settles on
-`Не удалось загрузить типы встреч.` and the network panel has no `/api/meeting-types` entry. The
-client is created with a relative endpoint, `new CallCalendarClient({ endpoint: "/api" })`, and
-`@typespec/ts-http-runtime` rejects it with
-`TypeError: Failed to construct 'URL': Invalid URL` before the request is sent. React Query swallows
-the error, so the console can stay clean; the visible error state and the missing request are the
-evidence. The fix belongs to the web-wiring work in issue #4. The step passes only when the empty
-state and the `200` request appear; do not mark the error state as expected.
-
-### 4. Owner cabinet via the header
+### 4. Owner cabinet and creation form
 
 **Action:** from `/`, click `Личный кабинет`.
 
 **Expected:** the URL becomes `/owner`. The page has the heading `Личный кабинет`, the paragraph
-`Учебный каркас: личный кабинет владельца календаря.`, and the button `Загрузить встречи`.
+`Учебный каркас: личный кабинет владельца календаря.`, the heading `Новый тип встречи`, and the
+form fields `Название`, `Описание (необязательно)`, `Длительность, минут`, and the button
+`Создать тип встречи`.
 
 **Console:** no errors.
 
-**Network:** no `/api` request. The owner page is a placeholder and does not fetch data yet.
+**Network:** no `/api` request on page load. The owner page does not fetch data until the form is
+submitted.
 
-**SPEC:** the checkpoints `Владелец может создать тип встречи` and
-`Владелец видит список предстоящих встреч всех типов` are not verifiable yet; this step covers the
-route and the shell only. See [Checkpoints](../SPEC.md#checkpoints).
+**SPEC:** the checkpoint `Владелец может создать тип встречи` is exercised in step 5; the checkpoint
+`Владелец видит список предстоящих встреч всех типов` is not implemented yet. See
+[Checkpoints](../SPEC.md#checkpoints).
 
-### 5. Owner button is a placeholder
+### 5. Owner creates a meeting type
 
-**Action:** click `Загрузить встречи`.
+**Action:** on `/owner`, fill the form with a unique name (for example `Проверка UI <date>`), an
+optional description, and a duration of `30` minutes. Submit `Создать тип встречи`.
 
-**Expected:** nothing changes. The URL stays `/owner`, the page keeps the same text, and the button
-stays visible.
-
-**Console:** no new messages.
-
-**Network:** no new request.
-
-**SPEC:** `Владелец видит список предстоящих встреч всех типов` remains pending. Do not mark that
-checkpoint as passed because the button exists.
-
-### 6. Owner cabinet deep link
-
-**Action:** navigate directly to <http://localhost:5173/owner>.
-
-**Expected:** the same owner page as step 4, rendered from a direct document request rather than from
-in-app navigation.
+**Expected:** the message `Тип встречи создан.` appears, the form is cleared, and the new type is
+saved. The duration input rejects values outside 15–1440 and values that are not multiples of 15;
+submit one invalid value to confirm the browser blocks it before the request.
 
 **Console:** no errors.
 
-**Network:** the document returns `200`; the Vite modules load. No `/api` request.
+**Network:** `POST /api/meeting-types` returns `201` with the created object, including a non-empty
+`id`, the submitted `name`, and `durationMinutes: 30`. The request body contains only the submitted
+fields; an empty description is omitted.
 
-**SPEC:** navigation only; the owner checkpoints stay pending.
+**SPEC:** checkpoint `Владелец может создать тип встречи (название, описание, длительность)` in
+[Checkpoints](../SPEC.md#checkpoints).
 
-### 7. Booking placeholder deep link
+**Note:** this writes to the database. Use a unique name so repeated runs stay distinguishable.
 
-**Action:** navigate to <http://localhost:5173/book/placeholder>. Any id works while the list is
-empty.
+### 6. Public page shows the created type
 
-**Expected:** the heading `Выбор времени`, the paragraph
-`Свободные слоты и форма записи появятся, когда будет подключён движок бронирования.`, and the link
-`Назад к списку типов встреч` pointing to `/`. There is no meeting-type line and no slot grid.
+**Action:** click `Календарь звонков` in the header to return to `/`.
 
-**Console:** no uncaught errors. The page may repeat the meeting-types query failure from step 3,
-but it must not crash.
+**Expected:** the new type appears as a card with its name, description, `30 мин`, and a link to
+`/book/{id}`. If it was the first type, the empty-state paragraph is gone.
 
-**Network:** no `GET /api/meeting-types/{id}/slots` request yet. The slot endpoint exists in the
-contract but the page does not call it.
+**Console:** no errors.
+
+**Network:** `GET /api/meeting-types` returns `200` and the response includes the new type.
+
+**SPEC:** checkpoint `Гость видит список типов встреч без регистрации` in
+[Checkpoints](../SPEC.md#checkpoints).
+
+### 7. Booking placeholder
+
+**Action:** click the created type card.
+
+**Expected:** the URL becomes `/book/{id}`. The heading `Выбор времени` and the line
+`<name> · 30 мин` appear, followed by the paragraph
+`Свободные слоты и форма записи появятся, когда будет подключён движок бронирования.` and the link
+`Назад к списку типов встреч` pointing to `/`. There is no slot grid and no booking form.
+
+**Console:** no uncaught errors.
+
+**Network:** the page reuses the meeting-type query; `GET /api/meeting-types` returns `200`. No
+`GET /api/meeting-types/{id}/slots` request yet. The slot endpoint exists in the contract but the
+page does not call it.
 
 **SPEC:** the checkpoints `Гость видит свободные слоты на 14 дней вперёд` and
 `Гость может забронировать свободный слот` are pending; see
 [Checkpoints](../SPEC.md#checkpoints).
 
-### 8. In-app navigation and history
+### 8. Owner cabinet deep link
 
-**Action:** start at `/book/placeholder`, then:
+**Action:** navigate directly to <http://localhost:5173/owner>.
+
+**Expected:** the same owner page and form as step 4, rendered from a direct document request rather
+than from in-app navigation.
+
+**Console:** no errors.
+
+**Network:** the document returns `200`; the Vite modules load. No `/api` request.
+
+**SPEC:** navigation only; the owner checkpoints stay as described in step 4.
+
+### 9. In-app navigation and history
+
+**Action:** start at `/book/{id}`, then:
 
 1. click `Назад к списку типов встреч` and wait for `/`;
 2. click `Личный кабинет` and wait for `/owner`;
@@ -187,9 +204,9 @@ contract but the page does not call it.
 
 **Expected:** every in-app link updates the URL and the main content without a full page reload. The
 header stays in place. Back and Forward restore the previous URL and page. On `/` the public list
-state from step 3 appears.
+from step 6 appears.
 
-**Console:** no errors. Only the unknown-route warning from step 9 is allowed, and only on that
+**Console:** no errors. Only the unknown-route warning from step 10 is allowed, and only on that
 route.
 
 **Network:** in-app navigations add no document request. If the destination queries data, its API
@@ -197,7 +214,7 @@ request appears in the network panel.
 
 **SPEC:** navigation only; no checkpoint.
 
-### 9. Unknown route
+### 10. Unknown route
 
 **Action:** navigate to <http://localhost:5173/does-not-exist>.
 
@@ -212,22 +229,23 @@ request appears in the network panel.
 **SPEC:** no checkpoint. This is a known scaffold gap: a not-found page is not in the contract.
 Record it; do not fail the run on it unless the task adds a not-found page.
 
-### 10. API surface behind the UI (optional)
+### 11. API surface behind the UI (optional)
 
 This is not a UI step. It separates an API failure from a UI failure when a checklist step fails.
 Vite proxies `/api` to the API and strips the prefix, so `/api/meeting-types` reaches
 `GET /meeting-types` on port 3000. Open the requests in the browser or use `curl` through the proxy:
 
-| Request | Current placeholder response |
+| Request | Current response |
 | --- | --- |
 | `GET /api/healthz` | `200 {"status":"ok"}` |
-| `GET /api/meeting-types` | `200 {"meetingTypes":[]}` |
-| `GET /api/bookings` | `200 {"bookings":[]}` |
-| `GET /api/meeting-types/placeholder/slots` | `200` with `timezone: "UTC"`, `windowStart` equal to `windowEnd`, `slots: []` |
-| `POST /api/meeting-types` with a valid body | `201` and the request fields echoed with `id: "placeholder"` |
-| `POST /api/bookings` | `409 {"code":"slot_not_available","message":"Slot is not available"}` |
+| `GET /api/meeting-types` | `200` with the saved meeting types |
+| `POST /api/meeting-types` with a valid body | `201` and the saved type; this is real persistence, not a placeholder |
+| `GET /api/bookings` | `200 {"bookings":[]}` placeholder |
+| `GET /api/meeting-types/{id}/slots` | `200` with `timezone` set, `windowStart` equal to `windowEnd`, `slots: []` placeholder |
+| `POST /api/bookings` | `409 {"code":"slot_not_available","message":"Slot is not available"}` placeholder |
 
-These are placeholders, not `docs/SPEC.md` behavior. Do not use them to claim a booking checkpoint.
+The meeting-type endpoints are real. The slot and booking endpoints are placeholders, not
+`docs/SPEC.md` behavior. Do not use them to claim a booking checkpoint.
 
 ## Pending booking scenarios
 
@@ -259,7 +277,15 @@ Browser:
 Environment: mise run dev | mise run --skip-deps dev
 Step 1: PASS — 200 {"status":"ok"}
 Step 2: PASS — title, header links
-Step 3: FAIL — error state, no /api/meeting-types request
+Step 3: PASS — empty state, GET /api/meeting-types 200
+Step 4: PASS — owner form
+Step 5: PASS — POST /api/meeting-types 201, success message
+Step 6: PASS — created type card
+Step 7: PASS — booking placeholder
+Step 8: PASS — owner deep link
+Step 9: PASS — history
+Step 10: PASS — unknown route warning only
+Step 11: PASS — API surface
 ...
 Console: <path or summary>
 Network: <path or summary>
