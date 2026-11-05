@@ -109,7 +109,7 @@ mise run build        # собрать сервер и фронтенд
 mise run docker:up    # собрать и запустить всё в Docker
 ```
 
-`mise run test`, `mise run test:e2e`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через mise-демон `db` и переиспользуют уже запущенный. Остановить базу — `mise daemons stop db` (или `mise run db:down`, чтобы удалить контейнеры).
+`mise run test`, `mise run test:e2e`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через `docker compose up -d --wait db` и переиспользуют уже запущенный контейнер. Compose-проект закреплён как `call-calendar`, поэтому все копии репозитория работают с одной базой. Остановить базу — `mise run db:down`.
 
 ## Переменные окружения
 

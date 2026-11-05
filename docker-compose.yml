@@ -1,3 +1,7 @@
+# Pin the project name so every checkout and worktree manages the same
+# containers instead of spawning one per directory and fighting over port 5432.
+name: call-calendar
+
 services:
   db:
     image: postgres:16-alpine

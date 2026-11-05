@@ -19,9 +19,9 @@ runner.
 | MCP servers | `mise run mcp:check` | both servers report `connected` and launch a browser |
 | App | `mise run dev` | Vite is ready on <http://localhost:5173> and `curl http://localhost:3000/healthz` returns `{"status":"ok"}` |
 
-`mise run dev` starts the PostgreSQL daemon. If another worktree already owns port 5432, the daemon
-cannot bind it; in that case run `mise run --skip-deps dev` and use the database that is already
-running. Do not stop another worktree's daemon.
+`mise run dev` starts the PostgreSQL container (`docker compose up -d --wait db`). The compose
+project is pinned to `call-calendar`, so every checkout reuses the same container. If startup fails
+with "port is already allocated", another compose project owns port 5432; stop that container.
 
 Wait for the readiness condition, not for a fixed delay. `curl` with `--retry` or Playwright's
 auto-waiting is enough.
@@ -298,5 +298,6 @@ not a reason to rewrite the expected result.
 
 ## Cleanup
 
-Stop the dev server with `Ctrl+C`. Do not stop the shared `db` daemon if another worktree may be
-using it. `.playwright-mcp` is gitignored, so the artifacts can stay on disk; do not commit them.
+Stop the dev server with `Ctrl+C`. Leave the shared `call-calendar-db-1` container running if
+another checkout may be using it; otherwise stop it with `mise run db:down`. `.playwright-mcp` is
+gitignored, so the artifacts can stay on disk; do not commit them.

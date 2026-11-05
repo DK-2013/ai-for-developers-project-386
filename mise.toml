@@ -26,17 +26,13 @@ version_prefix = "lychee-v"
 [tools."github:lycheeverse/lychee".platforms]
 linux-x64 = { asset_pattern = "lychee-x86_64-unknown-linux-musl.tar.gz" }
 
-[daemons.db]
-run = "exec docker compose up db"
-ready_port = 5432
-
 [tasks.setup]
 description = "Start PostgreSQL, install dependencies, generate code and install hooks"
 run = "docker compose up -d --wait db && pnpm install && pnpm codegen && hk install"
 
 [tasks.dev]
 description = "Start the API and the web app in watch mode"
-daemons = ["db"]
+depends = ["db:up"]
 run = "pnpm dev"
 
 [tasks.codegen]
@@ -53,12 +49,12 @@ run = "docker compose down"
 
 [tasks.test]
 description = "Run unit and integration tests"
-daemons = ["db"]
+depends = ["db:up"]
 run = "pnpm test"
 
 [tasks."test:e2e"]
 description = "Run Playwright end-to-end tests against the web app and API"
-daemons = ["db"]
+depends = ["db:up"]
 run = ["playwright install chromium", "pnpm --filter @calendar/web test:e2e"]
 
 [tasks."mcp:browsers"]
@@ -83,9 +79,8 @@ description = "Build and run the whole app in Docker"
 run = "docker compose up --build"
 
 [tasks.check]
-description = "Run every quality check (starts PostgreSQL via the db daemon)"
-depends = ["codegen"]
-daemons = ["db"]
+description = "Run every quality check (starts PostgreSQL via docker compose)"
+depends = ["codegen", "db:up"]
 run = "hk check --all"
 
 [tasks."check:fast"]
