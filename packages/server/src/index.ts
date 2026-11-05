@@ -4,22 +4,15 @@ import { Pool } from "pg";
 import { createRequestHandler } from "./app.js";
 import { systemClock } from "./clock.js";
 import { loadConfig } from "./config.js";
-import { runMigrations } from "./db/migrate.js";
+import { prepareDatabase } from "./db/prepare-database.js";
 import { schema } from "./db/schema.js";
-import { seedDefaultMeetingType } from "./db/seed.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
   const pool = new Pool({ connectionString: config.databaseUrl });
   const db = drizzle(pool, { schema });
 
-  if (config.migrateOnStart) {
-    await runMigrations(db);
-  }
-
-  // Seeding is unconditional: the default type must exist even when the
-  // schema is managed outside the process, and a failure aborts startup.
-  await seedDefaultMeetingType(db);
+  await prepareDatabase(db, { migrateOnStart: config.migrateOnStart });
 
   const requestHandler = createRequestHandler({
     db,
