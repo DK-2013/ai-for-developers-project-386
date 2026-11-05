@@ -1,0 +1,112 @@
+import type { CreateMeetingTypeRequest } from "@calendar/sdk";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, type FormEvent } from "react";
+import { apiClient, meetingTypesQuery } from "../api/queries";
+
+export type MeetingTypeFormStatus = "idle" | "submitting" | "success" | "error";
+
+export type MeetingTypeFormViewProps = {
+  status: MeetingTypeFormStatus;
+  message?: string;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+export function MeetingTypeFormView({ status, message, onSubmit }: MeetingTypeFormViewProps) {
+  return (
+    <form className="mt-6 grid gap-4" onSubmit={onSubmit}>
+      <label className="grid gap-1 text-sm font-medium">
+        Название
+        <input
+          className="rounded-md border border-border bg-background px-3 py-2"
+          maxLength={200}
+          name="name"
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">
+        Описание (необязательно)
+        <textarea
+          className="rounded-md border border-border bg-background px-3 py-2"
+          maxLength={2000}
+          name="description"
+          rows={3}
+        />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">
+        Длительность, минут
+        <input
+          className="rounded-md border border-border bg-background px-3 py-2"
+          defaultValue={30}
+          max={1440}
+          min={15}
+          name="durationMinutes"
+          required
+          step={15}
+          type="number"
+        />
+      </label>
+      <button
+        className="justify-self-start rounded-md border border-border bg-background px-4 py-2 hover:bg-muted disabled:opacity-50"
+        disabled={status === "submitting"}
+        type="submit"
+      >
+        {status === "submitting" ? "Создание..." : "Создать тип встречи"}
+      </button>
+      {status === "error" && message ? (
+        <p className="text-sm text-muted-foreground" role="alert">
+          {message}
+        </p>
+      ) : null}
+      {status === "success" && message ? (
+        <output className="text-sm text-muted-foreground">{message}</output>
+      ) : null}
+    </form>
+  );
+}
+
+export function MeetingTypeForm() {
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState<MeetingTypeFormStatus>("idle");
+  const [message, setMessage] = useState<string>();
+  const mutation = useMutation({
+    mutationFn: (input: CreateMeetingTypeRequest) => apiClient.createMeetingType(input),
+  });
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const name = String(formData.get("name") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const durationMinutes = Number(formData.get("durationMinutes"));
+    const request: CreateMeetingTypeRequest = { name, durationMinutes };
+
+    if (description !== "") {
+      request.description = description;
+    }
+
+    setStatus("submitting");
+    setMessage(undefined);
+
+    try {
+      const result = await mutation.mutateAsync(request);
+
+      if ("code" in result) {
+        setStatus("error");
+        setMessage(result.message);
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: meetingTypesQuery.queryKey });
+      form.reset();
+      setStatus("success");
+      setMessage("Тип встречи создан.");
+    } catch {
+      setStatus("error");
+      setMessage("Не удалось создать тип встречи. Попробуйте ещё раз.");
+    }
+  }
+
+  return <MeetingTypeFormView status={status} message={message} onSubmit={handleSubmit} />;
+}
