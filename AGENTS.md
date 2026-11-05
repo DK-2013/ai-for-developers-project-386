@@ -21,9 +21,15 @@ Call booking app (learning project): one owner publishes meeting types and avail
 
 If two sources disagree, stop and report the conflict. Do not silently choose one.
 
-## Current scaffold
+## Current state
 
-The repository is an early scaffold, not the full product. The contract declares every operation listed in `docs/SPEC.md`. Implemented: `GET /healthz`, `GET /meeting-types`, `POST /meeting-types` with boundary validation, `GET /meeting-types/{id}/slots` backed by the pure slot engine and owner-local time module, and `POST /bookings` with boundary validation, the shared bookability rules, and the database exclusion constraint mapped to `409`; `GET /bookings` listing upcoming bookings across all meeting types ordered by start; migrations for both tables including the `bookings_no_overlap` GiST exclusion constraint; a startup seed of one default meeting type; the typed owner config (time zone, working hours/days); the spec-fixed booking-rules constants (14-day horizon, 15-minute step). `web` has the meeting types page, the owner meeting-type form and upcoming-bookings list, and the guest booking flow: free slots grouped in the browser time zone, slot selection, name and e-mail form, conflict message, and success state. Treat the rest of `docs/SPEC.md` as target behavior. If a task depends on a missing piece, say so instead of inventing an implementation.
+The repository implements the product described in `docs/SPEC.md`, and every operation in the contract is wired end to end.
+
+- `server`: `POST /meeting-types` with boundary validation; `GET /meeting-types/{id}/slots` backed by the pure slot engine and owner-local time module; `POST /bookings` with boundary validation, the shared bookability rules, and the database exclusion constraint mapped to `409`; `GET /bookings` listing bookings that have not ended, across all meeting types, ordered by start. Migrations cover both tables, including the `bookings_no_overlap` GiST exclusion constraint.
+- Startup seeds one default meeting type, loads the typed owner config (time zone, working hours and days), and uses the spec-fixed booking-rules constants (14-day horizon, 15-minute step).
+- `web`: the meeting-types page, the owner meeting-type form and upcoming-bookings list, and the guest booking flow: free slots grouped in the browser time zone with the owner zone shown as reference, slot selection, name and e-mail form, conflict message, and success state.
+
+`docs/SPEC.md` is the product source of truth. If a task depends on behavior that is neither in the spec nor in the contract, say so instead of inventing an implementation.
 
 ## Structure
 

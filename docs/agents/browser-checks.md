@@ -2,12 +2,11 @@
 
 A repeatable UI verification scenario for the call-calendar app. Run it in a real browser before
 merging a UI change, after changing the contract, or when an issue asks for a browser check. It
-covers the public page, the owner cabinet, meeting-type creation, and navigation. Booking scenarios
-are listed as pending and are added when the booking engine lands.
+covers the public meeting-type list, the owner cabinet, meeting-type creation, the guest booking flow
+(slots, time zones, conflict, success), the upcoming-bookings list, and navigation.
 
 This is a manual check for a human or an agent, not a test suite. Automated browser checks live in
-Playwright Test (`mise run test:e2e`, ticket #18); the MCP servers are developer tools, not a test
-runner.
+Playwright Test (`mise run test:e2e`); the MCP servers are developer tools, not a test runner.
 
 ## Prerequisites
 
@@ -26,6 +25,10 @@ with "port is already allocated", another compose project owns port 5432; stop t
 Wait for the readiness condition, not for a fixed delay. `curl` with `--retry` or Playwright's
 auto-waiting is enough.
 
+The default owner configuration is `Europe/Moscow`, working hours `10:00`–`18:00`, Monday–Friday.
+Override it in `.env` only when a step needs a different zone; a run against the defaults is the
+normal case. The booking window is the current owner-local day plus the following 13 days.
+
 ## Rules
 
 - **No `sleep`.** Wait on observable state: Playwright auto-waiting, `browser_wait_for({ text })`, a
@@ -38,8 +41,10 @@ auto-waiting is enough.
   network all match. Save the accessibility snapshot, console dump, and network list for failures.
 - **Continue after a failure** unless it blocks later steps. One run should report every regression,
   not only the first one.
-- **Product expectations come from `docs/SPEC.md`.** The `Current scaffold` notes describe unfinished
-  code; they are not the target behavior.
+- **Expectations come from `docs/SPEC.md`.** If the UI and the spec disagree, the spec wins and the
+  step is a failure.
+- **Booking steps write to the database.** Use unique names and pick a free slot so repeated runs stay
+  distinguishable. Do not reuse a slot that an earlier step already booked.
 
 ## Playwright MCP recipes
 
@@ -81,14 +86,12 @@ replace waits with sleeps.
 
 **Expected:** the document title is `Календарь звонков`. The header contains the link
 `Календарь звонков` pointing to `/` and the link `Личный кабинет` pointing to `/owner`. The main
-area shows a loading state, the meeting-type list, or the error state; step 3 decides which one is
-correct.
+area shows the meeting-type list from step 3.
 
-**Console:** no uncaught errors. A single `favicon.ico` `404` is expected on a cold load because the
-scaffold ships no favicon.
+**Console:** no uncaught errors. A `favicon.ico` `404` may appear on a cold load because the app
+ships no favicon; record it, do not fail the run on it.
 
-**Network:** the document and the Vite module requests return `200`. The only failed request may be
-the favicon.
+**Network:** the document and the Vite module requests return `200`.
 
 **SPEC:** [guest sees meeting types without registration](../SPEC.md#checkpoints).
 
@@ -96,36 +99,37 @@ the favicon.
 
 **Action:** from `/`, wait for the final list state. Do not stop at `Загрузка...`.
 
-**Expected:** the heading `Выберите тип встречи`. On a database with no meeting types, the paragraph
-`Пока нет доступных типов встреч` appears and no cards are rendered. If types already exist, cards
-are rendered instead; this step passes either way. The error state
+**Expected:** the heading `Выберите тип встречи`. On a clean install the seeded type `Звонок`
+(`Стандартный звонок`, `15 мин`) is present as a card and links to `/book/{id}`. If the database has
+no meeting types, the paragraph `Пока нет доступных типов встреч` appears and no cards are rendered;
+that is a failure on a clean install, where the seeded type must exist. The error state
 `Не удалось загрузить типы встреч.` is always a failure.
 
-**Console:** no uncaught errors, except the favicon `404` from step 2. A failed query is not an
-excuse for a red console error.
+**Console:** no uncaught errors, except the optional favicon `404` from step 2.
 
-**Network:** `GET /api/meeting-types` returns `200`. The body is `{"meetingTypes":[]}` on an empty
-database or contains the saved types. No `4xx` or `5xx` response for that request.
+**Network:** `GET /api/meeting-types` returns `200`. The response body has a `meetingTypes` array
+that includes every saved type, including the seeded one.
 
-**SPEC:** checkpoint `Гость видит список типов встреч без регистрации` in
-[Checkpoints](../SPEC.md#checkpoints).
+**SPEC:** checkpoints `Гость видит список типов встреч без регистрации` and `На чистой установке
+гость видит доступный тип встречи по умолчанию` in [Checkpoints](../SPEC.md#checkpoints).
 
-### 4. Owner cabinet and creation form
+### 4. Owner cabinet, upcoming bookings, and creation form
 
 **Action:** from `/`, click `Личный кабинет`.
 
 **Expected:** the URL becomes `/owner`. The page has the heading `Личный кабинет`, the paragraph
-`Учебный каркас: личный кабинет владельца календаря.`, the heading `Новый тип встречи`, and the
-form fields `Название`, `Описание (необязательно)`, `Длительность, минут`, and the button
-`Создать тип встречи`.
+`Создавайте типы встреч и следите за предстоящими звонками.`, the heading `Предстоящие встречи`,
+the heading `Новый тип встречи`, the form fields `Название`, `Описание (необязательно)`,
+`Длительность, минут`, and the button `Создать тип встречи`. If no booking is upcoming, the list
+shows `Пока нет предстоящих встреч.`; otherwise each item shows the meeting type name, the day and
+start–end time, and the attendee name and e-mail, ordered by start.
 
 **Console:** no errors.
 
-**Network:** no `/api` request on page load. The owner page does not fetch data until the form is
-submitted.
+**Network:** `GET /api/bookings` returns `200` with a `bookings` array. A failure renders
+`Не удалось загрузить предстоящие встречи.` and fails the step.
 
-**SPEC:** the checkpoint `Владелец может создать тип встречи` is exercised in step 5; the checkpoint
-`Владелец видит список предстоящих встреч всех типов` is not implemented yet. See
+**SPEC:** checkpoint `Владелец видит список предстоящих встреч всех типов` in
 [Checkpoints](../SPEC.md#checkpoints).
 
 ### 5. Owner creates a meeting type
@@ -140,8 +144,7 @@ submit one invalid value to confirm the browser blocks it before the request.
 **Console:** no errors.
 
 **Network:** `POST /api/meeting-types` returns `201` with the created object, including a non-empty
-`id`, the submitted `name`, and `durationMinutes: 30`. The request body contains only the submitted
-fields; an empty description is omitted.
+`id`, the submitted `name`, and `durationMinutes: 30`. The request body omits an empty description.
 
 **SPEC:** checkpoint `Владелец может создать тип встречи (название, описание, длительность)` in
 [Checkpoints](../SPEC.md#checkpoints).
@@ -153,7 +156,7 @@ fields; an empty description is omitted.
 **Action:** click `Календарь звонков` in the header to return to `/`.
 
 **Expected:** the new type appears as a card with its name, description, `30 мин`, and a link to
-`/book/{id}`. If it was the first type, the empty-state paragraph is gone.
+`/book/{id}`. The seeded type is still present.
 
 **Console:** no errors.
 
@@ -162,39 +165,122 @@ fields; an empty description is omitted.
 **SPEC:** checkpoint `Гость видит список типов встреч без регистрации` in
 [Checkpoints](../SPEC.md#checkpoints).
 
-### 7. Booking placeholder
+### 7. Guest booking page: slots, window, and time zones
 
-**Action:** click the created type card.
+**Action:** click the created type card and wait for the slot grid.
 
-**Expected:** the URL becomes `/book/{id}`. The heading `Выбор времени` and the line
-`<name> · 30 мин` appear, followed by the paragraph
-`Свободные слоты и форма записи появятся, когда будет подключён движок бронирования.` and the link
-`Назад к списку типов встреч` pointing to `/`. There is no slot grid and no booking form.
+**Expected:** the URL becomes `/book/{id}`. The heading is `Выбор времени`, followed by
+`<name> · 30 мин`. The line `Время в вашем часовом поясе. Часовой пояс владельца: Europe/Moscow.`
+is shown (the zone reflects the owner config). Slots are grouped under day headings in the guest's
+browser zone, and the link `Назад к списку типов встреч` points to `/`. With the default
+configuration every start is on the 15-minute grid and fits inside `10:00`–`18:00` owner time on a
+weekday, and no start is at or before the current moment. When no slot fits the remaining window,
+the page shows `Нет свободных слотов в ближайшие 14 дней.`.
 
-**Console:** no uncaught errors.
-
-**Network:** the page reuses the meeting-type query; `GET /api/meeting-types` returns `200`. No
-`GET /api/meeting-types/{id}/slots` request yet. The slot endpoint exists in the contract but the
-page does not call it.
-
-**SPEC:** the checkpoints `Гость видит свободные слоты на 14 дней вперёд` and
-`Гость может забронировать свободный слот` are pending; see
-[Checkpoints](../SPEC.md#checkpoints).
-
-### 8. Owner cabinet deep link
-
-**Action:** navigate directly to <http://localhost:5173/owner>.
-
-**Expected:** the same owner page and form as step 4, rendered from a direct document request rather
-than from in-app navigation.
+The owner's zone fixes the grid; only the display follows the browser zone. To check the display
+zone, compare a slot's rendered time with the same instant in the browser's zone: changing the
+browser zone shifts the rendered times, not the set of bookable instants. To check the window, read
+the slots response: `windowStart` is midnight of the current owner-local day, `windowEnd` is midnight
+14 days later, and `timezone` is the owner zone. The window is anchored to the current clock; a later
+run on another owner-local day must show a window shifted forward by a day.
 
 **Console:** no errors.
 
-**Network:** the document returns `200`; the Vite modules load. No `/api` request.
+**Network:** `GET /api/meeting-types` and `GET /api/meeting-types/{id}/slots` both return `200`. The
+slots body contains `timezone`, `windowStart`, `windowEnd`, and a `slots` array of `startAt`/`endAt`
+instants.
 
-**SPEC:** navigation only; the owner checkpoints stay as described in step 4.
+**SPEC:** checkpoints `Гость видит свободные слоты на 14 дней вперёд`, `Слоты генерируются только в
+рабочие часы и с заданным шагом`, `Слоты в прошлом недоступны для бронирования`, `Гость видит
+календарь в часовом поясе своего браузера`, and `Окно бронирования сдвигается с течением времени` in
+[Checkpoints](../SPEC.md#checkpoints).
 
-### 9. In-app navigation and history
+### 8. Guest books a free slot
+
+**Action:** click a free slot, fill `Имя` with a unique name and `E-mail` with a valid address,
+then submit `Забронировать`.
+
+**Expected:** the form is replaced by the section `Вы записаны` with the meeting type name, the day
+and start time in the guest zone, and the attendee name and e-mail. Returning to the same booking
+page (or refreshing it) no longer offers that start.
+
+**Console:** no errors.
+
+**Network:** `POST /api/bookings` returns `201` with the booking `id`, `meetingTypeId`,
+`meetingTypeName`, `startAt`, `endAt`, `attendeeName`, and `attendeeEmail`. The slot list is
+refetched afterwards.
+
+**SPEC:** checkpoint `Гость может забронировать свободный слот` in
+[Checkpoints](../SPEC.md#checkpoints).
+
+### 9. Booking conflict shows a clear message
+
+**Action:** in the booking page, select a free slot but do not submit yet. In a second tab (or with
+`curl`), book the same `startAt` through `POST /api/bookings`. Return to the first tab and submit the
+name and e-mail form.
+
+**Expected:** the message `Это время уже занято. Пожалуйста, выберите другой слот.` appears, the
+selection is cleared, and the slot grid refreshes without the taken start. The page does not show a
+success state.
+
+**Console:** no uncaught page errors. The browser logs the rejected request as
+`Failed to load resource ... 409`; that is the expected conflict response.
+
+**Network:** the first `POST /api/bookings` returns `201`; the second returns
+`409 {"code":"slot_not_available","message":"Slot is not available"}` followed by a fresh
+`GET /api/meeting-types/{id}/slots`.
+
+**SPEC:** checkpoint `Повторное бронирование того же времени возвращает 409` in
+[Checkpoints](../SPEC.md#checkpoints).
+
+### 10. Overlap rules: partial overlap and back-to-back starts
+
+**Action:** through the API, book a slot with one meeting type, then try to start another type
+inside the first booking's interval, then try a start exactly at the first booking's `endAt`.
+
+**Expected:** the partial overlap returns `409` with `slot_not_available`; the back-to-back start
+returns `201` and its `startAt` equals the previous `endAt`.
+
+**Console:** not applicable; this step is API-level.
+
+**Network:** record the three `POST /api/bookings` responses.
+
+**SPEC:** checkpoints `Частичное наложение интервалов разных типов запрещено` and `Встреча может
+начинаться ровно в момент окончания предыдущей` in [Checkpoints](../SPEC.md#checkpoints).
+
+### 11. Concurrent requests for one slot
+
+**Action:** pick a free start and send two `POST /api/bookings` requests for it at the same time
+(for example two tabs submitting the same stale selection, or two parallel `curl` processes).
+
+**Expected:** exactly one response is `201`; the other is `409 slot_not_available`. Refreshing the
+slot grid shows the start once as taken.
+
+**Console:** no uncaught page errors. A browser-level `409` resource error for the losing request is
+expected.
+
+**Network:** record both responses and their timings.
+
+**SPEC:** checkpoint `Два одновременных запроса на один слот: один успешен, второй — 409` in
+[Checkpoints](../SPEC.md#checkpoints).
+
+### 12. Owner sees the new booking, ordered and without finished ones
+
+**Action:** open `/owner`.
+
+**Expected:** `Предстоящие встречи` lists the bookings from steps 8–11 across all meeting types,
+ordered by start. Each item shows the type name, day, start–end time, and attendee name and e-mail.
+Finished bookings are absent: a booking whose `endAt` is in the past never appears. On a database
+with no upcoming bookings, `Пока нет предстоящих встреч.` is shown instead.
+
+**Console:** no errors.
+
+**Network:** `GET /api/bookings` returns `200` with upcoming bookings only, sorted by `startAt`.
+
+**SPEC:** checkpoint `Владелец видит список предстоящих встреч всех типов` in
+[Checkpoints](../SPEC.md#checkpoints).
+
+### 13. In-app navigation and history
 
 **Action:** start at `/book/{id}`, then:
 
@@ -206,7 +292,7 @@ than from in-app navigation.
 header stays in place. Back and Forward restore the previous URL and page. On `/` the public list
 from step 6 appears.
 
-**Console:** no errors. Only the unknown-route warning from step 10 is allowed, and only on that
+**Console:** no errors. Only the unknown-route warning from step 14 is allowed, and only on that
 route.
 
 **Network:** in-app navigations add no document request. If the destination queries data, its API
@@ -214,57 +300,39 @@ request appears in the network panel.
 
 **SPEC:** navigation only; no checkpoint.
 
-### 10. Unknown route
+### 14. Unknown route
 
 **Action:** navigate to <http://localhost:5173/does-not-exist>.
 
 **Expected:** the header still renders, the main area is empty, and the URL stays
-`/does-not-exist`. There is no 404 page in the scaffold.
+`/does-not-exist`. There is no 404 page in the app.
 
 **Console:** React Router logs `No routes matched location "/does-not-exist"` twice under
 `StrictMode`. That is a warning, not an error.
 
 **Network:** the document returns `200`.
 
-**SPEC:** no checkpoint. This is a known scaffold gap: a not-found page is not in the contract.
-Record it; do not fail the run on it unless the task adds a not-found page.
+**SPEC:** no checkpoint; a not-found page is not in the contract. Record it and do not fail the run
+on it unless the task adds one.
 
-### 11. API surface behind the UI (optional)
+### 15. API surface behind the UI (optional)
 
 This is not a UI step. It separates an API failure from a UI failure when a checklist step fails.
 Vite proxies `/api` to the API and strips the prefix, so `/api/meeting-types` reaches
 `GET /meeting-types` on port 3000. Open the requests in the browser or use `curl` through the proxy:
 
-| Request | Current response |
+| Request | Expected response |
 | --- | --- |
 | `GET /api/healthz` | `200 {"status":"ok"}` |
-| `GET /api/meeting-types` | `200` with the saved meeting types |
-| `POST /api/meeting-types` with a valid body | `201` and the saved type; this is real persistence, not a placeholder |
-| `GET /api/bookings` | `200 {"bookings":[]}` placeholder |
-| `GET /api/meeting-types/{id}/slots` | `200` with `timezone` set, `windowStart` equal to `windowEnd`, `slots: []` placeholder |
-| `POST /api/bookings` | `409 {"code":"slot_not_available","message":"Slot is not available"}` placeholder |
+| `GET /api/meeting-types` | `200` with all saved meeting types, including the seeded default |
+| `POST /api/meeting-types` with a valid body | `201` and the saved type |
+| `GET /api/meeting-types/{id}/slots` | `200` with `timezone`, a 14-day `windowStart`/`windowEnd`, and free `slots` on the owner-local grid |
+| `POST /api/bookings` with a valid free slot | `201` and the booking |
+| `POST /api/bookings` for a taken or non-bookable start | `409 {"code":"slot_not_available","message":"Slot is not available"}` |
+| `GET /api/bookings` | `200` with upcoming bookings across all types, sorted by start |
 
-The meeting-type endpoints are real. The slot and booking endpoints are placeholders, not
-`docs/SPEC.md` behavior. Do not use them to claim a booking checkpoint.
-
-## Pending booking scenarios
-
-These [checkpoints](../SPEC.md#checkpoints) need the booking engine and the UI. Add a step here when
-the corresponding screen lands; do not invent selectors, copy, or responses before then. The
-Playwright Test specs from ticket #18 should reuse the same scenarios.
-
-| Checkpoint in `docs/SPEC.md` | What the future step will assert | Depends on |
-| --- | --- | --- |
-| Guest sees free slots for 14 days | a 14-day grid from today in the owner time zone, with the window bounds visible | #6 |
-| Slots only in working hours and on the 15-minute grid | no starts outside 10:00–18:00 owner time; starts fall on `:00`, `:15`, `:30`, `:45` | #6 |
-| Past slots are unavailable | no start at or before the current moment | #6 |
-| Guest sees the calendar in the browser time zone | times follow the browser zone; the owner zone is shown as reference | #6, [ADR 0004](../adr/0004-guest-calendar-renders-in-guest-timezone.md) |
-| Guest books a free slot | the form accepts name and email, succeeds, and the slot disappears | #7 |
-| A second booking of the same time returns 409 | the second attempt shows the conflict message | #7 |
-| Partial overlap of different types is rejected | a booking that overlaps another type is refused | #7 |
-| A meeting may start exactly when the previous one ends | a booking at the previous `endAt` succeeds | #7 |
-| Two concurrent requests for one slot: one succeeds, one gets 409 | two tabs submit the same slot; the browser check records the two responses, while the integration test proves the race | #7 |
-| The booking window slides with time | the visible window starts today and ends 14 days later on a later run | #6 |
+Use these to confirm that the contract and the server agree; do not treat a stale or unexpected
+response as a pass.
 
 ## Recording a run
 
@@ -277,15 +345,19 @@ Browser:
 Environment: mise run dev | mise run --skip-deps dev
 Step 1: PASS — 200 {"status":"ok"}
 Step 2: PASS — title, header links
-Step 3: PASS — empty state, GET /api/meeting-types 200
-Step 4: PASS — owner form
+Step 3: PASS — seeded type and GET /api/meeting-types 200
+Step 4: PASS — owner cabinet, upcoming list, form
 Step 5: PASS — POST /api/meeting-types 201, success message
 Step 6: PASS — created type card
-Step 7: PASS — booking placeholder
-Step 8: PASS — owner deep link
-Step 9: PASS — history
-Step 10: PASS — unknown route warning only
-Step 11: PASS — API surface
+Step 7: PASS — slot grid, owner zone reference, 14-day window
+Step 8: PASS — POST /api/bookings 201, success state
+Step 9: PASS — conflict message on 409
+Step 10: PASS — partial overlap 409, back-to-back 201
+Step 11: PASS — concurrent requests: one 201, one 409
+Step 12: PASS — owner list ordered, no finished bookings
+Step 13: PASS — history
+Step 14: PASS — unknown route warning only
+Step 15: PASS — API surface
 ...
 Console: <path or summary>
 Network: <path or summary>
