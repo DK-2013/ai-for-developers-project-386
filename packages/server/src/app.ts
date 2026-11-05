@@ -3,6 +3,8 @@ import { Temporal } from "temporal-polyfill";
 import type { Clock } from "./clock.js";
 import type { OwnerConfig } from "./config.js";
 import type { Database } from "./db/schema.js";
+import { computeSlots } from "./domain/slots.js";
+import { bookingWindow } from "./domain/time/index.js";
 import type { HttpContext } from "./generated/helpers/router.js";
 import { createCallCalendarRouter } from "./generated/http/router.js";
 import type {
@@ -15,6 +17,7 @@ import type { CallCalendar } from "./generated/models/all/index.js";
 import type { MeetingType } from "./meeting-types/domain.js";
 import { createMeetingTypeRepository } from "./meeting-types/repository.js";
 import { parseCreateMeetingTypeRequest } from "./meeting-types/validation.js";
+import { createSlotRepository } from "./slots/repository.js";
 
 export type RequestHandlerDependencies = {
   db: Database;
@@ -51,6 +54,7 @@ export function createRequestHandler({
   clock,
 }: RequestHandlerDependencies): (request: IncomingMessage, response: ServerResponse) => void {
   const meetingTypes = createMeetingTypeRepository(db);
+  const slots = createSlotRepository(db);
 
   const service: CallCalendar<HttpContext> = {
     async healthz() {
@@ -87,15 +91,32 @@ export function createRequestHandler({
       };
     },
 
-    async listSlots(_ctx, _id) {
+    async listSlots(_ctx, id) {
+      const meetingType = await meetingTypes.findById(id);
+
+      if (meetingType === undefined) {
+        return {
+          statusCode: 404 as const,
+          body: apiError("meeting_type_not_found", "Meeting type not found"),
+        };
+      }
+
       const now = clock();
       const instant = Temporal.Instant.fromEpochMilliseconds(now.getTime());
+      const window = bookingWindow(instant, owner.timeZone);
+      const occupied = await slots.listOccupied(window);
+      const result = computeSlots({
+        now: instant,
+        owner,
+        durationMinutes: meetingType.durationMinutes,
+        occupied,
+      });
 
       const body: SlotList = {
         timezone: owner.timeZone,
-        windowStart: instant,
-        windowEnd: instant,
-        slots: [],
+        windowStart: result.window.start,
+        windowEnd: result.window.end,
+        slots: result.slots.map((slot) => ({ startAt: slot.start, endAt: slot.end })),
       };
 
       return {

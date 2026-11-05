@@ -1,4 +1,4 @@
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { meetingTypes, type Database } from "../db/schema.js";
 import type { MeetingType, NewMeetingType } from "./domain.js";
 
@@ -20,8 +20,11 @@ function toMeetingType(row: MeetingTypeRow): MeetingType {
 
 export type MeetingTypeRepository = {
   create(input: NewMeetingType): Promise<MeetingType>;
+  findById(id: string): Promise<MeetingType | undefined>;
   list(): Promise<MeetingType[]>;
 };
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function createMeetingTypeRepository(db: Database): MeetingTypeRepository {
   return {
@@ -43,6 +46,17 @@ export function createMeetingTypeRepository(db: Database): MeetingTypeRepository
       }
 
       return toMeetingType(row);
+    },
+
+    async findById(id) {
+      if (!UUID_PATTERN.test(id)) {
+        return undefined;
+      }
+
+      const rows = await db.select().from(meetingTypes).where(eq(meetingTypes.id, id));
+      const row = rows.at(0);
+
+      return row === undefined ? undefined : toMeetingType(row);
     },
 
     async list() {

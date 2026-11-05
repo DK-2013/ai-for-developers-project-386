@@ -1,26 +1,64 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
-import { meetingTypesQuery } from "../api/queries";
+import { useParams } from "react-router-dom";
+import { meetingTypesQuery, slotsQuery } from "../api/queries";
+import { BookingSlotsView } from "../components/booking-slots-view";
+import { detectGuestTimeZone } from "../lib/slots";
 
-export function BookingPage() {
+type BookingPageProps = {
+  guestTimeZone?: string;
+};
+
+export function BookingPage({ guestTimeZone = detectGuestTimeZone() }: BookingPageProps = {}) {
   const { id } = useParams();
-  const { data } = useQuery(meetingTypesQuery);
-  const meetingType = data?.meetingTypes.find((item) => item.id === id);
+  const meetingTypesResult = useQuery(meetingTypesQuery);
+  const slotsResult = useQuery({
+    ...slotsQuery(id ?? ""),
+    enabled: id !== undefined,
+  });
+
+  const meetingType = meetingTypesResult.data?.meetingTypes.find((item) => item.id === id);
+  const meetingTypeSummary =
+    meetingType === undefined
+      ? undefined
+      : { name: meetingType.name, durationMinutes: meetingType.durationMinutes };
+
+  if (meetingTypesResult.isLoading || slotsResult.isLoading) {
+    return <BookingSlotsView status="loading" meetingType={meetingTypeSummary} />;
+  }
+
+  if (meetingTypesResult.isError || slotsResult.isError) {
+    return (
+      <BookingSlotsView
+        status="error"
+        meetingType={meetingTypeSummary}
+        message="Не удалось загрузить свободные слоты."
+      />
+    );
+  }
+
+  if (meetingType === undefined) {
+    return <BookingSlotsView status="error" message="Тип встречи не найден." />;
+  }
+
+  const slots = slotsResult.data;
+
+  if (slots === undefined || !("slots" in slots)) {
+    return (
+      <BookingSlotsView
+        status="error"
+        meetingType={meetingTypeSummary}
+        message="Не удалось загрузить свободные слоты."
+      />
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
-      <h1 className="text-2xl font-bold">Выбор времени</h1>
-      {meetingType ? (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {meetingType.name} · {meetingType.durationMinutes} мин
-        </p>
-      ) : null}
-      <p className="mt-2 text-muted-foreground">
-        Свободные слоты и форма записи появятся, когда будет подключён движок бронирования.
-      </p>
-      <Link className="mt-4 inline-block underline" to="/">
-        Назад к списку типов встреч
-      </Link>
-    </main>
+    <BookingSlotsView
+      status="ready"
+      meetingType={meetingTypeSummary}
+      timezone={slots.timezone}
+      guestTimeZone={guestTimeZone}
+      slots={slots.slots}
+    />
   );
 }
