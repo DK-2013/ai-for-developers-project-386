@@ -143,9 +143,11 @@ export function createRequestHandler({
     },
 
     async listBookings() {
+      const upcoming = await bookings.listUpcoming(clock());
+
       return {
         statusCode: 200 as const,
-        body: { bookings: [] },
+        body: { bookings: upcoming.map(toWireBooking) },
       };
     },
 

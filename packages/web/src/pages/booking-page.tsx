@@ -2,7 +2,7 @@ import type { Slot } from "@calendar/sdk";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
-import { createBooking, meetingTypesQuery, slotsQuery } from "../api/queries";
+import { bookingsQuery, createBooking, meetingTypesQuery, slotsQuery } from "../api/queries";
 import { BookingSlotsView, type BookingFormState } from "../components/booking-slots-view";
 import { detectGuestTimeZone } from "../lib/slots";
 
@@ -83,6 +83,7 @@ export function BookingPage({ guestTimeZone = detectGuestTimeZone() }: BookingPa
 
       setSelectedSlot(undefined);
       setFormState({ status: "success", booking: result });
+      await queryClient.invalidateQueries({ queryKey: bookingsQuery.queryKey });
       await refreshSlots();
     } catch (error) {
       console.error("Create booking failed", error);

@@ -26,12 +26,13 @@ type Response = { status: number; body: unknown };
 let database: TestDatabase;
 let server: Server;
 let baseUrl: string;
+let currentNow = FIXED_NOW;
 
 async function startServer(db: Database): Promise<{ server: Server; baseUrl: string }> {
   const requestHandler = createRequestHandler({
     db,
     owner: parseConfig({}).owner,
-    clock: () => FIXED_NOW,
+    clock: () => currentNow,
   });
   const nextServer = createServer(requestHandler);
 
@@ -80,6 +81,13 @@ async function postBooking(body: unknown): Promise<Response> {
   return { status: response.status, body: parsed };
 }
 
+async function getBookings(): Promise<Response> {
+  const response = await fetch(`${baseUrl}/bookings`);
+  const parsed: unknown = await response.json();
+
+  return { status: response.status, body: parsed };
+}
+
 function bookingRequest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     meetingTypeId: DEFAULT_MEETING_TYPE_ID,
@@ -98,6 +106,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  currentNow = FIXED_NOW;
   await database.reset();
 });
 
@@ -263,5 +272,90 @@ describe("POST /bookings", () => {
     });
 
     expect(statuses.toSorted()).toEqual([201, 409]);
+  });
+});
+
+describe("GET /bookings", () => {
+  it("returns upcoming bookings from every meeting type ordered by start", async () => {
+    const consultationId = await createMeetingType("Консультация", 30);
+    const later = await postBooking(
+      bookingRequest({ startAt: "2026-01-06T08:00:00Z", attendeeName: "Анна" }),
+    );
+    const earlier = await postBooking(
+      bookingRequest({
+        meetingTypeId: consultationId,
+        startAt: "2026-01-06T07:00:00Z",
+        attendeeName: "Борис",
+        attendeeEmail: "boris@example.com",
+      }),
+    );
+
+    expect(later.status).toBe(201);
+    expect(earlier.status).toBe(201);
+
+    const response = await getBookings();
+    const body = response.body as { bookings: BookingBody[] };
+
+    expect(response.status).toBe(200);
+    expect(body.bookings.map((booking) => booking.startAt)).toEqual([
+      "2026-01-06T07:00:00Z",
+      "2026-01-06T08:00:00Z",
+    ]);
+    expect(body.bookings.map((booking) => booking.meetingTypeName)).toEqual([
+      "Консультация",
+      "Звонок",
+    ]);
+    expect(body.bookings.map((booking) => booking.attendeeName)).toEqual(["Борис", "Анна"]);
+  });
+
+  it("includes the full booking details with the meeting type name snapshot", async () => {
+    const consultationId = await createMeetingType("Консультация", 30);
+    await postBooking(
+      bookingRequest({
+        meetingTypeId: consultationId,
+        startAt: "2026-01-06T07:00:00Z",
+        attendeeName: "Борис",
+        attendeeEmail: "boris@example.com",
+      }),
+    );
+
+    const response = await getBookings();
+    const body = response.body as { bookings: BookingBody[] };
+
+    expect(response.status).toBe(200);
+    expect(body.bookings).toHaveLength(1);
+    expect(body.bookings[0]).toMatchObject({
+      meetingTypeId: consultationId,
+      meetingTypeName: "Консультация",
+      startAt: "2026-01-06T07:00:00Z",
+      endAt: "2026-01-06T07:30:00Z",
+      attendeeName: "Борис",
+      attendeeEmail: "boris@example.com",
+    });
+  });
+
+  it("excludes bookings that have ended and keeps the ones still running", async () => {
+    await postBooking(bookingRequest({ startAt: "2026-01-06T07:00:00Z", attendeeName: "Анна" }));
+    await postBooking(bookingRequest({ startAt: "2026-01-06T08:00:00Z", attendeeName: "Борис" }));
+
+    currentNow = new Date("2026-01-06T07:15:00.000Z");
+
+    const response = await getBookings();
+    const body = response.body as { bookings: BookingBody[] };
+
+    expect(response.status).toBe(200);
+    expect(body.bookings.map((booking) => booking.attendeeName)).toEqual(["Борис"]);
+  });
+
+  it("returns an empty list when no booking is upcoming", async () => {
+    await postBooking(bookingRequest({ startAt: "2026-01-06T07:00:00Z" }));
+
+    currentNow = new Date("2026-01-06T08:00:00.000Z");
+
+    const response = await getBookings();
+    const body = response.body as { bookings: BookingBody[] };
+
+    expect(response.status).toBe(200);
+    expect(body.bookings).toEqual([]);
   });
 });
