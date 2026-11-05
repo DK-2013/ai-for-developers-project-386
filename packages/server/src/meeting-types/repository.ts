@@ -1,9 +1,6 @@
 import { asc } from "drizzle-orm";
-import type {
-  CreateMeetingTypeRequest,
-  MeetingType,
-} from "../generated/models/all/call-calendar.js";
 import { meetingTypes, type Database } from "../db/schema.js";
+import type { MeetingType, NewMeetingType } from "./domain.js";
 
 type MeetingTypeRow = typeof meetingTypes.$inferSelect;
 
@@ -22,7 +19,7 @@ function toMeetingType(row: MeetingTypeRow): MeetingType {
 }
 
 export type MeetingTypeRepository = {
-  create(input: CreateMeetingTypeRequest): Promise<MeetingType>;
+  create(input: NewMeetingType): Promise<MeetingType>;
   list(): Promise<MeetingType[]>;
 };
 

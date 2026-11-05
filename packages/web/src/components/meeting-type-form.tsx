@@ -102,7 +102,8 @@ export function MeetingTypeForm() {
       form.reset();
       setStatus("success");
       setMessage("Тип встречи создан.");
-    } catch {
+    } catch (error) {
+      console.error("Create meeting type failed", error);
       setStatus("error");
       setMessage("Не удалось создать тип встречи. Попробуйте ещё раз.");
     }

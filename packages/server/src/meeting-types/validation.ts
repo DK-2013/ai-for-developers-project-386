@@ -1,7 +1,7 @@
-import type { CreateMeetingTypeRequest } from "../generated/models/all/call-calendar.js";
+import type { NewMeetingType } from "./domain.js";
 
 export type CreateMeetingTypeValidation =
-  | { ok: true; value: CreateMeetingTypeRequest }
+  | { ok: true; value: NewMeetingType }
   | { ok: false; message: string };
 
 type JsonRecord = Record<string, unknown>;
@@ -60,7 +60,7 @@ export function parseCreateMeetingTypeRequest(body: unknown): CreateMeetingTypeV
     return invalid("durationMinutes must be a multiple of 15");
   }
 
-  const value: CreateMeetingTypeRequest = { name, durationMinutes };
+  const value: NewMeetingType = { name, durationMinutes };
 
   if (typeof description === "string") {
     value.description = description;
