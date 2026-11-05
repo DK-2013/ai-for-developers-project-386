@@ -6,10 +6,17 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createRequestHandler } from "../src/app.js";
 import { parseConfig } from "../src/config.js";
 import { schema, type Database } from "../src/db/schema.js";
+import { seedDefaultMeetingType } from "../src/db/seed.js";
 import { createTestDatabase, type TestDatabase } from "./helpers/database.js";
 
 const FIXED_NOW = new Date("2026-01-01T10:00:00.000Z");
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const DEFAULT_MEETING_TYPE = {
+  id: "00000000-0000-4000-8000-000000000001",
+  name: "Звонок",
+  description: "Стандартный звонок",
+  durationMinutes: 15,
+};
 
 let database: TestDatabase;
 let server: Server;
@@ -100,6 +107,24 @@ describe("HTTP surface", () => {
     expect(body).toEqual({ status: "ok" });
   });
 
+  it("exposes the default meeting type on a clean database", async () => {
+    const body = await listMeetingTypes();
+
+    expect(body).toEqual({
+      meetingTypes: [DEFAULT_MEETING_TYPE],
+    });
+  });
+
+  it("keeps exactly one default meeting type when the seed runs twice", async () => {
+    await seedDefaultMeetingType(database.db);
+    await seedDefaultMeetingType(database.db);
+
+    const body = await listMeetingTypes();
+    const meetingTypes = (body as { meetingTypes: unknown[] }).meetingTypes;
+
+    expect(meetingTypes).toEqual([DEFAULT_MEETING_TYPE]);
+  });
+
   it("creates a meeting type and returns it", async () => {
     const response = await postMeetingType({
       name: "Intro call",
@@ -134,7 +159,7 @@ describe("HTTP surface", () => {
       (meetingType) => meetingType.name,
     );
 
-    expect(names).toEqual(["First", "Second"]);
+    expect(names).toEqual([DEFAULT_MEETING_TYPE.name, "First", "Second"]);
   });
 
   it("keeps meeting types after a new pool and server start", async () => {
@@ -147,7 +172,7 @@ describe("HTTP surface", () => {
       const body = await listMeetingTypes(restarted.baseUrl);
       const meetingTypes = (body as { meetingTypes: unknown[] }).meetingTypes;
 
-      expect(meetingTypes).toEqual([created.body]);
+      expect(meetingTypes).toEqual([DEFAULT_MEETING_TYPE, created.body]);
     } finally {
       await stopServer(restarted.server);
       await newPool.end();

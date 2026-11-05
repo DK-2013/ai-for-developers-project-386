@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Client, Pool } from "pg";
 import { runMigrations } from "../../src/db/migrate.js";
 import { schema, type Database } from "../../src/db/schema.js";
+import { seedDefaultMeetingType } from "../../src/db/seed.js";
 
 const DEFAULT_TEST_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/call_calendar_test";
 
@@ -76,6 +77,7 @@ export async function createTestDatabase(label: string): Promise<TestDatabase> {
     url,
     async reset() {
       await pool.query("TRUNCATE TABLE bookings, meeting_types RESTART IDENTITY CASCADE");
+      await seedDefaultMeetingType(db);
     },
     async destroy() {
       await pool.end();
