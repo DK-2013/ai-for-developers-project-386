@@ -47,7 +47,14 @@ export function createMeetingTypeRepository(db: Database): MeetingTypeRepository
     },
 
     async findById(id) {
-      const rows = await db.select().from(meetingTypes).where(eq(meetingTypes.id, id));
+      let rows: MeetingTypeRow[];
+
+      try {
+        rows = await db.select().from(meetingTypes).where(eq(meetingTypes.id, id));
+      } catch (error) {
+        throw new Error("Find meeting type by id: query failed", { cause: error });
+      }
+
       const row = rows.at(0);
 
       return row === undefined ? undefined : toMeetingType(row);
