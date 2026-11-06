@@ -52,11 +52,12 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 
 ## Checks
 
-- **`mise run check` is the full gate.** It runs `mise run codegen` first, then `hk check --all`: oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, tests, betterleaks, suppression-date check, and jactionlint.
-- **`mise run check:fast` is not the full gate.** It runs `hk run pre-commit --staged --check` and skips `codegen`, `typecheck`, `depcruise`, and tests. Use it while iterating; use `mise run check` before pushing.
+- **`mise run verify` is the full gate.** It runs `mise run codegen` first, then `hk check --all`: oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, tests, betterleaks, suppression-date check, and jactionlint. It also runs `mise run build` and `mise run test:e2e`.
+- **`mise run check` is the static gate.** It runs the same `codegen` and `hk check --all` steps without the build and browser tests. Use it while iterating; use `mise run verify` before pushing.
+- **`mise run check:fast` is not the full gate.** It runs `hk run pre-commit --staged --check` and skips `codegen`, `typecheck`, `depcruise`, and tests. Use it only for quick feedback.
 - **Formatter is `oxfmt`, linter is `oxlint --deny-warnings`.** ESLint is not configured alongside it.
 - **Disabling a rule is an exception, not a default.** A config-level override needs `review YYYY-MM-DD: <reason>`; an inline `// oxlint-disable` needs the same review-dated reason. `scripts/check-suppression-dates.mjs` enforces the date format and expiry for tracked suppression files. The `no-unused-vars` override in `.oxlintrc.json` is the model, not a precedent for silent disables.
-- **`agnix --strict .` passes.** No agent/generator commits without running `mise run check`.
+- **`agnix --strict .` passes.** No agent/generator commits without running `mise run verify`.
 - **New dependencies need a reason.** Prefer the standard library and existing packages; do not add a second library for the same job.
 
 ## Tests (Vitest)
@@ -86,7 +87,7 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 - **A commit tied to a ticket names it in the subject** as a trailing `(#N)`, e.g. `feat(slots): compute free slots (#6)`. Commits outside a ticket — release chores, dependency bumps, unrelated cleanups — carry no reference. This is a convention, not a gate: `commitlint` does not require it, and its absence is not an error.
 - **History stays linear.** `git fetch origin && git rebase origin/main`, never `git merge`. Merge commits (`chore: merge origin/main`) are forbidden. Rebase only your own branch; never force-push `main` or a shared branch.
 - **`.github/workflows/hexlet-check.yml` is not deleted or renamed**, nor is the repository.
-- **Before pushing,** `mise run check` must pass fully. The pre-push hook runs `hk pre-push` (typecheck, depcruise, tests, security checks) but not `codegen`; it is not a replacement for the full gate. Pre-commit runs hk in fix mode and re-stages files — inspect the resulting diff.
+- **Before pushing,** `mise run verify` must pass fully. The pre-push hook runs `hk pre-push` (typecheck, depcruise, tests, security checks) but not `codegen`; it is not a replacement for the full gate. Pre-commit runs hk in fix mode and re-stages files — inspect the resulting diff.
 - **Commit and push only when asked.** Do not commit generated files or unrelated formatting.
 
 ## Known ignored errors

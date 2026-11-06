@@ -54,12 +54,13 @@ pnpm monorepo:
 - Test: `mise run test` (starts Postgres). Single file: `pnpm --filter @calendar/server exec vitest run test/app.test.ts`.
 - Browser install: `mise run mcp:browsers` installs the Chromium builds used by Playwright Test and the browser MCP servers.
 - Browser diagnostics: `mise run mcp:check` verifies that both browser MCP servers initialize, launch a browser, and expose tools.
-- Full gate: `mise run check` = `mise run codegen` + `hk check --all` (oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, test, betterleaks, suppression-date check, jactionlint). PostgreSQL starts through the `db:up` task dependency (`docker compose up -d --wait db`, compose project pinned to `call-calendar`), reusing an already-running container; stop it with `mise run db:down`. CI provides PostgreSQL as a service and runs `mise run --skip-deps check`, which skips the db and codegen dependencies.
+- Full gate: `mise run verify` = `mise run codegen` + `hk check --all` + `mise run build` + `mise run test:e2e`. `hk check --all` runs oxlint, oxfmt, syncpack, hadolint, typos, rumdl, agnix, vacuum, knip, typecheck, depcruise, test, betterleaks, suppression-date check, and jactionlint. PostgreSQL starts through the `db:up` task dependency (`docker compose up -d --wait db`, compose project pinned to `call-calendar`), reusing an already-running container; stop it with `mise run db:down`. CI provides PostgreSQL as a service and runs `mise run --skip-deps verify` after `pnpm codegen`, which skips the db and codegen dependencies.
+- Static gate: `mise run check` = the same `codegen` + `hk check --all` steps without the build and browser tests. Use it while iterating; run `mise run verify` before pushing.
 - Fast gate: `mise run check:fast` = `hk run pre-commit --staged --check`. It does not run `codegen`, `typecheck`, `depcruise`, or tests.
 - Autofix: `mise run fix` = `hk fix --all` (oxlint + oxfmt + rumdl). The pre-commit hook runs hk in fix mode over more steps and may rewrite and re-stage files; inspect the diff after it runs.
 - Vulnerabilities: `mise run check:osv` scans lockfiles against the OSV database. It runs on the weekly `security` workflow, not in `mise run check`, because a new advisory can fail it without a change on our side.
 - Migrations: `pnpm db:generate` (Drizzle schema → SQL). Custom SQL is allowed only for the cases listed in `CODING_STANDARDS.md`.
-- Pre-push runs `hk pre-push` (typecheck, depcruise, tests, security checks) but not `codegen`. Run `mise run check` before pushing.
+- Pre-push runs `hk pre-push` (typecheck, depcruise, tests, security checks) but not `codegen`. Run `mise run verify` before pushing.
 
 ## Browser verification
 
@@ -67,7 +68,7 @@ pnpm monorepo:
 - Playwright MCP: navigation, clicking, form filling, and page snapshots.
 - Chrome DevTools MCP: console messages, network requests, and performance traces.
 - Follow the [browser checks](docs/agents/browser-checks.md) checklist for expected results and what to inspect.
-- MCP is for manual and agent verification, not a test runner. Automated checks run through `mise run test` (Vitest) and `mise run test:e2e` (Playwright Test).
+- MCP is for manual and agent verification, not a test runner. Automated checks run through `mise run test` (Vitest) and `mise run test:e2e` (Playwright Test); `mise run verify` runs both plus the build and `hk check --all`.
 
 ## Hard rules
 
@@ -85,7 +86,7 @@ pnpm monorepo:
 
 - [ ] API change: `main.tsp` updated and `mise run codegen` run; generated files not edited.
 - [ ] Behavior change has a test; DB/concurrency change has an integration test.
-- [ ] `mise run check` passes. If it cannot pass, report the exact failing step and error.
+- [ ] `mise run verify` passes. If it cannot pass, report the exact failing step and error.
 - [ ] Diff is scoped to the task; no unrelated formatting or generated files.
 - [ ] New dependencies, migrations, and public API changes are called out explicitly.
 - [ ] `docs/SPEC.md` updated if user-facing behavior changed.

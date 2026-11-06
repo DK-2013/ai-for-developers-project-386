@@ -79,9 +79,19 @@ description = "Build and run the whole app in Docker"
 run = "docker compose up --build"
 
 [tasks.check]
-description = "Run every quality check (starts PostgreSQL via docker compose)"
+description = "Run static checks, typecheck, and unit/integration tests (starts PostgreSQL)"
 depends = ["codegen", "db:up"]
 run = "hk check --all"
+
+[tasks.verify]
+description = "Run all checks, build the apps, and run browser tests (starts PostgreSQL)"
+depends = ["codegen", "db:up"]
+run = [
+  "hk check --all",
+  "mise run build",
+  "playwright install chromium",
+  "pnpm --filter @calendar/web test:e2e",
+]
 
 [tasks."check:fast"]
 description = "Run fast checks on staged files"

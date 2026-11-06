@@ -105,11 +105,13 @@ mise run codegen      # перегенерировать OpenAPI, роутер �
 mise run db:up        # поднять PostgreSQL вручную
 mise run test         # unit + интеграционные тесты
 mise run test:e2e     # браузерные проверки через Playwright Test
+mise run check        # статические проверки, typecheck и тесты
+mise run verify       # полный прогон: check + build + браузерные тесты
 mise run build        # собрать сервер и фронтенд
 mise run docker:up    # собрать и запустить всё в Docker
 ```
 
-`mise run test`, `mise run test:e2e`, `mise run check` и `mise run dev` сами поднимают PostgreSQL через `docker compose up -d --wait db` и переиспользуют уже запущенный контейнер. Compose-проект закреплён как `call-calendar`, поэтому все копии репозитория работают с одной базой. Остановить базу — `mise run db:down`.
+`mise run test`, `mise run test:e2e`, `mise run check`, `mise run verify` и `mise run dev` сами поднимают PostgreSQL через `docker compose up -d --wait db` и переиспользуют уже запущенный контейнер. Compose-проект закреплён как `call-calendar`, поэтому все копии репозитория работают с одной базой. Остановить базу — `mise run db:down`.
 
 ## Переменные окружения
 
@@ -136,13 +138,16 @@ mise run docker:up    # собрать и запустить всё в Docker
 ```bash
 mise run test       # unit + интеграционные тесты (Vitest)
 mise run test:e2e   # браузерные проверки (Playwright Test)
+mise run verify     # полный прогон: check + build + test:e2e
 ```
 
-`mise run test:e2e` поднимает PostgreSQL, API и Vite, устанавливает Chromium для Playwright и
-проходит сценарии из `packages/web/e2e/`: создание типа встречи владельцем, публичный список и
-навигацию. Отдельный job в CI использует PostgreSQL как сервис и ставит браузер командой
-`playwright install --with-deps chromium`. Ручной чек-лист для проверки UI через MCP описан в
-`docs/agents/browser-checks.md`.
+`mise run verify` — единая команда для локальной проверки и CI: она запускает те же проверки, что
+`mise run check`, плюс сборку и браузерные тесты. `mise run test:e2e` поднимает PostgreSQL, API и Vite, устанавливает
+Chromium для Playwright и проходит сценарии из `packages/web/e2e/`: создание типа встречи
+владельцем, публичный список, навигацию и полный сценарий гостя (выбор типа, слота, форма,
+подтверждение). CI использует PostgreSQL как сервис и запускает `mise run --skip-deps verify`
+после `pnpm codegen`; браузер ставится командой `playwright install --with-deps chromium`.
+Ручной чек-лист для проверки UI через MCP описан в `docs/agents/browser-checks.md`.
 
 ## Проверка UI в браузере (MCP)
 
