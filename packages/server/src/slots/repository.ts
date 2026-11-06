@@ -11,12 +11,18 @@ export type SlotRepository = {
 export function createSlotRepository(db: Database): SlotRepository {
   return {
     async listOccupied(window) {
-      const rows = await db
-        .select({ startAt: bookings.startAt, endAt: bookings.endAt })
-        .from(bookings)
-        .where(
-          and(lt(bookings.startAt, toDate(window.end)), gt(bookings.endAt, toDate(window.start))),
-        );
+      let rows: { startAt: Date; endAt: Date }[];
+
+      try {
+        rows = await db
+          .select({ startAt: bookings.startAt, endAt: bookings.endAt })
+          .from(bookings)
+          .where(
+            and(lt(bookings.startAt, toDate(window.end)), gt(bookings.endAt, toDate(window.start))),
+          );
+      } catch (error) {
+        throw new Error("List occupied bookings: query failed", { cause: error });
+      }
 
       return rows.map((row) => ({
         start: toInstant(row.startAt),
