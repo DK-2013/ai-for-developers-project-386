@@ -89,7 +89,7 @@ pnpm monorepo:
 - [ ] Diff is scoped to the task; no unrelated formatting or generated files.
 - [ ] New dependencies, migrations, and public API changes are called out explicitly.
 - [ ] `docs/SPEC.md` updated if user-facing behavior changed.
-- [ ] Commit message follows Conventional Commits if a commit was requested.
+- [ ] Commit message follows Conventional Commits and names its ticket as a trailing `(#N)` when the commit belongs to one, if a commit was requested.
 
 ## Stop and ask
 
@@ -105,7 +105,7 @@ Stop and ask when a task requires:
 ## Conventions
 
 - Formatter: `oxfmt`; linter: `oxlint --deny-warnings`.
-- Commits: Conventional Commits; header, body, and footer lines ≤ 100 characters.
+- Commits: Conventional Commits; header, body, and footer lines ≤ 100 characters; a commit tied to a ticket ends its subject with `(#N)`, others omit it.
 - History: linear, no merge commits.
 - Language: README and user-facing docs in Russian; code, comments, agent docs, and commit messages in English.
 - Details: `CODING_STANDARDS.md`.

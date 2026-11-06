@@ -83,6 +83,7 @@ Implementation rules for this repository. `AGENTS.md` defines precedence, workfl
 ## Git and process
 
 - **Conventional Commits are mandatory** (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `ci:`). The header, body, and footer lines are ≤ 100 characters; this matches `@commitlint/config-conventional`. If the limits change, change `commitlint.config.mjs` and this rule together.
+- **A commit tied to a ticket names it in the subject** as a trailing `(#N)`, e.g. `feat(slots): compute free slots (#6)`. Commits outside a ticket — release chores, dependency bumps, unrelated cleanups — carry no reference. This is a convention, not a gate: `commitlint` does not require it, and its absence is not an error.
 - **History stays linear.** `git fetch origin && git rebase origin/main`, never `git merge`. Merge commits (`chore: merge origin/main`) are forbidden. Rebase only your own branch; never force-push `main` or a shared branch.
 - **`.github/workflows/hexlet-check.yml` is not deleted or renamed**, nor is the repository.
 - **Before pushing,** `mise run check` must pass fully. The pre-push hook runs `hk pre-push` (typecheck, depcruise, tests, security checks) but not `codegen`; it is not a replacement for the full gate. Pre-commit runs hk in fix mode and re-stages files — inspect the resulting diff.
