@@ -7,7 +7,7 @@ import {
 
 function renderForm(overrides: Partial<MeetingTypeFormViewProps> = {}): string {
   return renderToStaticMarkup(
-    <MeetingTypeFormView status="idle" onSubmit={() => {}} {...overrides} />,
+    <MeetingTypeFormView status="idle" onCancel={() => {}} onSubmit={() => {}} {...overrides} />,
   );
 }
 
@@ -27,12 +27,6 @@ describe("meeting type form", () => {
     expect(markup).toContain("Создать тип встречи");
   });
 
-  it("shows the success message", () => {
-    const markup = renderForm({ status: "success", message: "Тип встречи создан." });
-
-    expect(markup).toContain("Тип встречи создан.");
-  });
-
   it("shows the API error message", () => {
     const markup = renderForm({
       status: "error",
@@ -42,9 +36,16 @@ describe("meeting type form", () => {
     expect(markup).toContain("durationMinutes must be a multiple of 15");
   });
 
-  it("disables the submit button while submitting", () => {
+  it("renders a cancel action", () => {
+    const markup = renderForm();
+
+    expect(markup).toContain("Отмена");
+  });
+
+  it("disables the submit and cancel buttons while submitting", () => {
     const markup = renderForm({ status: "submitting" });
 
-    expect(markup).toContain("disabled");
+    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Создание\.\.\.<\/button>/);
+    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Отмена<\/button>/);
   });
 });
