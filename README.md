@@ -103,6 +103,7 @@ Vite проксирует `/api` на сервер и убирает префи�
 ```bash
 mise run codegen      # перегенерировать OpenAPI, роутер и SDK
 mise run db:up        # поднять PostgreSQL вручную
+mise run db:clean     # удалить все данные и вернуть тип встречи по умолчанию
 mise run test         # unit + интеграционные тесты
 mise run test:e2e     # браузерные проверки через Playwright Test
 mise run check        # статические проверки, typecheck и тесты
@@ -112,6 +113,8 @@ mise run docker:up    # собрать и запустить всё в Docker
 ```
 
 `mise run test`, `mise run test:e2e`, `mise run check`, `mise run verify` и `mise run dev` сами поднимают PostgreSQL через `docker compose up -d --wait db` и переиспользуют уже запущенный контейнер. Compose-проект закреплён как `call-calendar`, поэтому все копии репозитория работают с одной базой. Остановить базу — `mise run db:down`.
+
+`mise run db:clean` очищает таблицы `bookings` и `meeting_types`, заново применяет миграции и возвращает стартовый тип встречи. Команда подключается к базе по `DATABASE_URL` (по умолчанию — локальный PostgreSQL из `docker compose`), поэтому её можно запускать и при работающем `mise run dev`.
 
 ## Переменные окружения
 

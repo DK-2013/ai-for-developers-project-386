@@ -47,6 +47,11 @@ run = "docker compose up -d --wait db"
 description = "Stop local containers"
 run = "docker compose down"
 
+[tasks."db:clean"]
+description = "Delete all local data and restore the default meeting type (starts PostgreSQL)"
+depends = ["db:up"]
+run = "pnpm --filter @calendar/server db:clean"
+
 [tasks.test]
 description = "Run unit and integration tests"
 depends = ["db:up"]
