@@ -1,5 +1,7 @@
-import { Link, Route, Routes } from "react-router-dom";
-import { OwnerPage } from "./pages/owner-page";
+import { NavLink, Route, Routes } from "react-router-dom";
+import { OwnerBookingsPage } from "./pages/owner-bookings-page";
+import { OwnerLayout } from "./pages/owner-layout";
+import { OwnerMeetingTypesPage } from "./pages/owner-meeting-types-page";
 import { MeetingTypesPage } from "./pages/meeting-types-page";
 import { BookingPage } from "./pages/booking-page";
 
@@ -7,12 +9,23 @@ function Header() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-4xl items-center justify-between p-4">
-        <Link className="text-lg font-semibold" to="/">
+        <NavLink
+          className={({ isActive }) =>
+            isActive ? "text-lg font-semibold underline" : "text-lg font-semibold"
+          }
+          end
+          to="/"
+        >
           Календарь звонков
-        </Link>
-        <Link className="text-sm underline" to="/owner">
+        </NavLink>
+        <NavLink
+          className={({ isActive }) =>
+            isActive ? "text-sm font-semibold underline" : "text-sm underline"
+          }
+          to="/owner"
+        >
           Личный кабинет
-        </Link>
+        </NavLink>
       </div>
     </header>
   );
@@ -25,7 +38,10 @@ export function App() {
       <Routes>
         <Route path="/" element={<MeetingTypesPage />} />
         <Route path="/book/:id" element={<BookingPage />} />
-        <Route path="/owner" element={<OwnerPage />} />
+        <Route path="/owner" element={<OwnerLayout />}>
+          <Route index element={<OwnerBookingsPage />} />
+          <Route path="meeting-types" element={<OwnerMeetingTypesPage />} />
+        </Route>
       </Routes>
     </div>
   );
