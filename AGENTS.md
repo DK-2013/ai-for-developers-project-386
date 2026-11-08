@@ -27,7 +27,7 @@ The repository implements the product described in `docs/SPEC.md`, and every ope
 
 - `server`: `POST /meeting-types` with boundary validation; `GET /meeting-types/{id}/slots` backed by the pure slot engine and owner-local time module; `POST /bookings` with boundary validation, the shared bookability rules, and the database exclusion constraint mapped to `409`; `GET /bookings` listing bookings that have not ended, across all meeting types, ordered by start. Migrations cover both tables, including the `bookings_no_overlap` GiST exclusion constraint.
 - Startup seeds one default meeting type, loads the typed owner config (time zone, working hours and days), and uses the spec-fixed booking-rules constants (14-day horizon, 15-minute step).
-- `web`: the meeting-types page, the owner meeting-type form and upcoming-bookings list, and the guest booking flow: free slots grouped in the browser time zone with the owner zone shown as reference, slot selection, name and e-mail form, conflict message, and success state.
+- `web`: the tabbed owner cabinet (upcoming bookings and meeting-type sections), the owner meeting-type list with a modal creation flow, and the guest booking flow: free slots grouped in the browser time zone with the owner zone shown as reference, slot selection, name and e-mail form, conflict message, and success state.
 
 `docs/SPEC.md` is the product source of truth. If a task depends on behavior that is neither in the spec nor in the contract, say so instead of inventing an implementation.
 

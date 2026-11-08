@@ -51,6 +51,7 @@ describe("upcoming bookings view", () => {
     const markup = renderView({ status: "ready", bookings, timeZone: "Europe/Moscow" });
 
     expect(markup).toContain("Знакомство");
+    expect(markup).toContain('<h2 class="text-lg font-semibold">Знакомство</h2>');
     expect(markup).toContain("вторник, 6 января");
     expect(markup).toContain("10:00–10:30");
     expect(markup).toContain("Анна");

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { iconButtonClassName } from "../lib/button-classes";
 import { MeetingTypeForm } from "./meeting-type-form";
 
 export type MeetingTypeDialogProps = {
@@ -20,7 +21,6 @@ export function MeetingTypeDialog({ open, onClose, onSuccess }: MeetingTypeDialo
 
     if (open && !dialog.open) {
       dialog.showModal();
-      dialog.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
     } else if (!open && dialog.open) {
       dialog.close();
     }
@@ -74,7 +74,7 @@ export function MeetingTypeDialog({ open, onClose, onSuccess }: MeetingTypeDialo
             </h2>
             <button
               aria-label="Закрыть"
-              className="rounded-md border border-border bg-background px-2 py-1 text-sm hover:bg-muted disabled:opacity-50"
+              className={iconButtonClassName}
               disabled={isSubmitting}
               onClick={requestClose}
               type="button"
