@@ -24,10 +24,9 @@ describe("web smoke test", () => {
     expect(markup).toContain('href="/owner"');
   });
 
-  it("renders the owner cabinet with the creation form", () => {
-    const markup = renderApp("/owner");
+  it("renders the creation form on the meeting-types page", () => {
+    const markup = renderApp("/owner/meeting-types");
 
-    expect(markup).toContain("Личный кабинет");
     expect(markup).toContain("Новый тип встречи");
     expect(markup).toContain('name="name"');
     expect(markup).toContain('name="durationMinutes"');
@@ -42,6 +41,5 @@ describe("web smoke test", () => {
     expect(markup).toContain("Анна");
     expect(markup).toContain("anna@example.com");
     expect(markup).not.toContain("Пока нет предстоящих встреч.");
-    expect(markup).toContain("Новый тип встречи");
   });
 });

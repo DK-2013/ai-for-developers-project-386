@@ -97,7 +97,7 @@ op healthz(): {
 
 @route("/meeting-types")
 @get
-@doc("List all meeting types. Public: `owner` is a UI section, not an auth boundary.")
+@doc("List all meeting types. Public: `owner` is a UI section, not an auth boundary. Sorted by creation time, oldest first.")
 op listMeetingTypes(): {
   @statusCode statusCode: 200;
   @body body: MeetingTypeList;

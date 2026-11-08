@@ -4,8 +4,8 @@ test("owner creates a meeting type and a guest sees it in the public list", asyn
   const name = `E2E ${Date.now()} ${Math.random().toString(16).slice(2)}`;
   const description = "Created by Playwright";
 
-  await page.goto("/owner");
-  await expect(page.getByRole("heading", { name: "Личный кабинет" })).toBeVisible();
+  await page.goto("/owner/meeting-types");
+  await expect(page.getByRole("heading", { name: "Типы встреч", level: 1 })).toBeVisible();
 
   await page.getByLabel("Название").fill(name);
   await page.getByLabel("Описание (необязательно)").fill(description);
@@ -20,6 +20,12 @@ test("owner creates a meeting type and a guest sees it in the public list", asyn
 
   await expect(page.getByText("Тип встречи создан.")).toBeVisible();
   await expect(page.getByLabel("Название")).toHaveValue("");
+
+  const ownerItem = page.getByRole("listitem").filter({ hasText: name });
+  await expect(ownerItem).toBeVisible();
+  await expect(ownerItem).toContainText(description);
+  await expect(ownerItem).toContainText("30 мин");
+  await expect(ownerItem.getByRole("link")).toHaveCount(0);
 
   await page.getByRole("link", { name: "Календарь звонков" }).click();
   const card = page.getByRole("link", { name });
