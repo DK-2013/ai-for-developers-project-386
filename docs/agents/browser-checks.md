@@ -85,8 +85,9 @@ replace waits with sleeps.
 **Action:** navigate to <http://localhost:5173/>.
 
 **Expected:** the document title is `Календарь звонков`. The header contains the link
-`Календарь звонков` pointing to `/` and the link `Личный кабинет` pointing to `/owner`. The main
-area shows the meeting-type list from step 3.
+`Календарь звонков` pointing to `/` and the link `Личный кабинет` pointing to `/owner`.
+`Календарь звонков` is marked as the current page (`aria-current="page"`) and `Личный кабинет` is
+not. The main area shows the meeting-type list from step 3.
 
 **Console:** no uncaught errors. A `favicon.ico` `404` may appear on a cold load because the app
 ships no favicon; record it, do not fail the run on it.
@@ -113,38 +114,67 @@ that includes every saved type, including the seeded one.
 **SPEC:** checkpoints `Гость видит список типов встреч без регистрации` and `На чистой установке
 гость видит доступный тип встречи по умолчанию` in [Checkpoints](../SPEC.md#checkpoints).
 
-### 4. Owner cabinet, upcoming bookings, and creation form
+### 4. Owner cabinet: tabs, upcoming bookings, and meeting-type list
 
-**Action:** from `/`, click `Личный кабинет`.
+**Action:** from `/`, click `Личный кабинет`, then switch to the `Типы встреч` tab.
 
-**Expected:** the URL becomes `/owner`. The page has the heading `Личный кабинет`, the paragraph
-`Создавайте типы встреч и следите за предстоящими звонками.`, the heading `Предстоящие встречи`,
-the heading `Новый тип встречи`, the form fields `Название`, `Описание (необязательно)`,
-`Длительность, минут`, and the button `Создать тип встречи`. If no booking is upcoming, the list
-shows `Пока нет предстоящих встреч.`; otherwise each item shows the meeting type name, the day and
+**Expected:** the URL becomes `/owner`. The header link `Личный кабинет` is marked as the current
+page (`aria-current="page"`); `Календарь звонков` is not. Below the header are two tabs, `Встречи`
+and `Типы встреч`; `Встречи` is active and `Типы встреч` is not. The page has exactly one `h1`,
+`Предстоящие встречи`; the old `Личный кабинет` heading and the intro paragraph are absent, and the
+creation form is not inline on this tab. If no booking is upcoming, the list shows
+`Пока нет предстоящих встреч.`; otherwise each item shows the meeting type name, the day and
 start–end time, and the attendee name and e-mail, ordered by start.
+
+Switching to `Типы встреч` changes the URL to `/owner/meeting-types`. The `Типы встреч` tab becomes
+active and `Встречи` does not; the header link `Личный кабинет` stays active. The page has exactly
+one `h1`, `Типы встреч`, and the button `Добавить тип встречи`. The list shows every meeting type
+with its name, optional description, and duration (`30 мин`), in creation order, oldest first. The
+items are read-only: they contain no link to a booking page. With no meeting types the paragraph
+`Пока нет типов встреч.` appears; on a clean install the seeded `Звонок` must be present, so the
+empty state is a failure there. The error state `Не удалось загрузить типы встреч.` is always a
+failure. Direct navigation to `/owner/meeting-types` renders the same section, and browser Back and
+Forward switch between the two sections.
 
 **Console:** no errors.
 
-**Network:** `GET /api/bookings` returns `200` with a `bookings` array. A failure renders
-`Не удалось загрузить предстоящие встречи.` and fails the step.
+**Network:** the `Встречи` tab requests `GET /api/bookings` and returns `200` with a `bookings`
+array; the `Типы встреч` tab requests `GET /api/meeting-types` and returns `200` with a
+`meetingTypes` array. A failure renders `Не удалось загрузить предстоящие встречи.` or
+`Не удалось загрузить типы встреч.` and fails the step.
 
 **SPEC:** checkpoint `Владелец видит список предстоящих встреч всех типов` in
 [Checkpoints](../SPEC.md#checkpoints).
 
-### 5. Owner creates a meeting type
+### 5. Owner creates a meeting type in a modal
 
-**Action:** on `/owner`, fill the form with a unique name (for example `Проверка UI <date>`), an
-optional description, and a duration of `30` minutes. Submit `Создать тип встречи`.
+**Action:** on `/owner/meeting-types`, click `Добавить тип встречи`. Confirm focus moves to
+`Название`, then close and reopen the dialog once with each close path: the `Закрыть` button (`×`),
+`Esc`, a backdrop click, and `Отмена`. Finally fill the form with a unique name (for example
+`Проверка UI <date>`), an optional description, and a duration of `30` minutes, then submit
+`Создать тип встречи`.
 
-**Expected:** the message `Тип встречи создан.` appears, the form is cleared, and the new type is
-saved. The duration input rejects values outside 15–1440 and values that are not multiples of 15;
-submit one invalid value to confirm the browser blocks it before the request.
+**Expected:** the dialog `Новый тип встречи` opens over the list and the URL stays
+`/owner/meeting-types`. The form fields are `Название`, `Описание (необязательно)`,
+`Длительность, минут`; the buttons are `Создать тип встречи` and `Отмена`. Every close path hides
+the dialog, leaves the URL unchanged, and sends no request. While submitting, the submit button
+reads `Создание...`, the close, cancel, `Esc`, and backdrop paths do not dismiss the dialog, and the
+form is not cleared. On success the dialog closes, the form resets, the list refreshes with the new
+type, and `Тип встречи создан.` appears next to `Добавить тип встречи`; opening the dialog again
+clears that message. The duration input rejects values outside 15–1440 and values that are not
+multiples of 15 before any request. A failed creation keeps the dialog open with the error inside:
+a `400` shows the server message, any other failure shows
+`Не удалось создать тип встречи. Попробуйте ещё раз.`. Trigger the failure by blocking
+`POST /api/meeting-types` in DevTools (Network request blocking) or stopping the API.
 
-**Console:** no errors.
+**Console:** no errors. For the failure path, the browser logs the rejected request as a resource
+error; that is expected.
 
-**Network:** `POST /api/meeting-types` returns `201` with the created object, including a non-empty
-`id`, the submitted `name`, and `durationMinutes: 30`. The request body omits an empty description.
+**Network:** opening, closing, and validating the dialog send no request. On success
+`POST /api/meeting-types` returns `201` with the created object, including a non-empty `id`, the
+submitted `name`, and `durationMinutes: 30`, followed by `GET /api/meeting-types` returning `200`
+with the new type. The request body omits an empty description. A failed submit returns a `400` or
+a network error and no success message.
 
 **SPEC:** checkpoint `Владелец может создать тип встречи (название, описание, длительность)` in
 [Checkpoints](../SPEC.md#checkpoints).
@@ -266,10 +296,11 @@ expected.
 
 ### 12. Owner sees the new booking, ordered and without finished ones
 
-**Action:** open `/owner`.
+**Action:** open `/owner` (or select the `Встречи` tab).
 
-**Expected:** `Предстоящие встречи` lists the bookings from steps 8–11 across all meeting types,
-ordered by start. Each item shows the type name, day, start–end time, and attendee name and e-mail.
+**Expected:** the `Встречи` tab is active, and `Предстоящие встречи` lists the bookings from
+steps 8–11 across all meeting types, ordered by start. Each item shows the type name, day,
+start–end time, and attendee name and e-mail.
 Finished bookings are absent: a booking whose `endAt` is in the past never appears. On a database
 with no upcoming bookings, `Пока нет предстоящих встреч.` is shown instead.
 
@@ -286,11 +317,13 @@ with no upcoming bookings, `Пока нет предстоящих встреч.
 
 1. click `Назад к списку типов встреч` and wait for `/`;
 2. click `Личный кабинет` and wait for `/owner`;
-3. use browser Back twice and Forward once.
+3. click `Типы встреч` and wait for `/owner/meeting-types`;
+4. use browser Back twice and Forward twice.
 
 **Expected:** every in-app link updates the URL and the main content without a full page reload. The
-header stays in place. Back and Forward restore the previous URL and page. On `/` the public list
-from step 6 appears.
+header stays in place. Back and Forward restore the previous URL and page, including the active tab
+and the single `h1` of each section. After the final Forward the URL is `/owner/meeting-types` and
+the `Типы встреч` tab is active. On `/` the public list from step 6 appears.
 
 **Console:** no errors. Only the unknown-route warning from step 14 is allowed, and only on that
 route.
@@ -346,8 +379,8 @@ Environment: mise run dev | mise run --skip-deps dev
 Step 1: PASS — 200 {"status":"ok"}
 Step 2: PASS — title, header links
 Step 3: PASS — seeded type and GET /api/meeting-types 200
-Step 4: PASS — owner cabinet, upcoming list, form
-Step 5: PASS — POST /api/meeting-types 201, success message
+Step 4: PASS — owner cabinet tabs, upcoming list, meeting-type list
+Step 5: PASS — modal open/close, POST /api/meeting-types 201, confirmation
 Step 6: PASS — created type card
 Step 7: PASS — slot grid, owner zone reference, 14-day window
 Step 8: PASS — POST /api/bookings 201, success state
@@ -355,7 +388,7 @@ Step 9: PASS — conflict message on 409
 Step 10: PASS — partial overlap 409, back-to-back 201
 Step 11: PASS — concurrent requests: one 201, one 409
 Step 12: PASS — owner list ordered, no finished bookings
-Step 13: PASS — history
+Step 13: PASS — history and tabs
 Step 14: PASS — unknown route warning only
 Step 15: PASS — API surface
 ...
