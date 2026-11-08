@@ -47,7 +47,7 @@ describe("owner cabinet", () => {
     );
   });
 
-  it("renders the meeting-type list and creation form at /owner/meeting-types", () => {
+  it("renders the meeting-type list and add action at /owner/meeting-types", () => {
     const markup = renderApp("/owner/meeting-types", createQueryClient(meetingTypes));
 
     expect(markup).toContain('<h1 class="text-2xl font-bold">Типы встреч</h1>');
@@ -56,8 +56,9 @@ describe("owner cabinet", () => {
     expect(markup).toContain("30 мин");
     expect(markup).toContain("Разбор");
     expect(markup).toContain("60 мин");
-    expect(markup).toContain('name="name"');
-    expect(markup).toContain("Создать тип встречи");
+    expect(markup).toContain("Добавить тип встречи");
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).not.toContain('name="name"');
     expect(markup).not.toContain('href="/book/');
     expect(markup.indexOf("Знакомство")).toBeLessThan(markup.indexOf("Разбор"));
   });
@@ -78,6 +79,6 @@ describe("owner cabinet", () => {
     const markup = renderApp("/owner/meeting-types", createQueryClient({ meetingTypes: [] }));
 
     expect(markup).toContain("Пока нет типов встреч.");
-    expect(markup).toContain("Создать тип встречи");
+    expect(markup).toContain("Добавить тип встречи");
   });
 });

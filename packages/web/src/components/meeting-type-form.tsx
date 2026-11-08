@@ -3,15 +3,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { apiClient, meetingTypesQuery } from "../api/queries";
 
-export type MeetingTypeFormStatus = "idle" | "submitting" | "success" | "error";
+export type MeetingTypeFormStatus = "idle" | "submitting" | "error";
 
 export type MeetingTypeFormViewProps = {
   status: MeetingTypeFormStatus;
   message?: string;
+  onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-export function MeetingTypeFormView({ status, message, onSubmit }: MeetingTypeFormViewProps) {
+export function MeetingTypeFormView({
+  status,
+  message,
+  onCancel,
+  onSubmit,
+}: MeetingTypeFormViewProps) {
   return (
     <form className="mt-6 grid gap-4" onSubmit={onSubmit}>
       <label className="grid gap-1 text-sm font-medium">
@@ -45,26 +51,39 @@ export function MeetingTypeFormView({ status, message, onSubmit }: MeetingTypeFo
           type="number"
         />
       </label>
-      <button
-        className="justify-self-start rounded-md border border-border bg-background px-4 py-2 hover:bg-muted disabled:opacity-50"
-        disabled={status === "submitting"}
-        type="submit"
-      >
-        {status === "submitting" ? "Создание..." : "Создать тип встречи"}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button
+          className="rounded-md border border-border bg-background px-4 py-2 hover:bg-muted disabled:opacity-50"
+          disabled={status === "submitting"}
+          type="submit"
+        >
+          {status === "submitting" ? "Создание..." : "Создать тип встречи"}
+        </button>
+        <button
+          className="rounded-md border border-border bg-background px-4 py-2 hover:bg-muted disabled:opacity-50"
+          disabled={status === "submitting"}
+          onClick={onCancel}
+          type="button"
+        >
+          Отмена
+        </button>
+      </div>
       {status === "error" && message ? (
         <p className="text-sm text-muted-foreground" role="alert">
           {message}
         </p>
       ) : null}
-      {status === "success" && message ? (
-        <output className="text-sm text-muted-foreground">{message}</output>
-      ) : null}
     </form>
   );
 }
 
-export function MeetingTypeForm() {
+export type MeetingTypeFormProps = {
+  onCancel: () => void;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
+  onSuccess: () => void;
+};
+
+export function MeetingTypeForm({ onCancel, onSubmittingChange, onSuccess }: MeetingTypeFormProps) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<MeetingTypeFormStatus>("idle");
   const [message, setMessage] = useState<string>();
@@ -88,6 +107,7 @@ export function MeetingTypeForm() {
 
     setStatus("submitting");
     setMessage(undefined);
+    onSubmittingChange?.(true);
 
     try {
       const result = await mutation.mutateAsync(request);
@@ -100,14 +120,24 @@ export function MeetingTypeForm() {
 
       await queryClient.invalidateQueries({ queryKey: meetingTypesQuery.queryKey });
       form.reset();
-      setStatus("success");
-      setMessage("Тип встречи создан.");
+      setStatus("idle");
+      setMessage(undefined);
+      onSuccess();
     } catch (error) {
       console.error("Create meeting type failed", error);
       setStatus("error");
       setMessage("Не удалось создать тип встречи. Попробуйте ещё раз.");
+    } finally {
+      onSubmittingChange?.(false);
     }
   }
 
-  return <MeetingTypeFormView status={status} message={message} onSubmit={handleSubmit} />;
+  return (
+    <MeetingTypeFormView
+      message={message}
+      onCancel={onCancel}
+      onSubmit={handleSubmit}
+      status={status}
+    />
+  );
 }

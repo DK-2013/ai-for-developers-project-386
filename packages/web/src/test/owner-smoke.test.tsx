@@ -24,13 +24,13 @@ describe("web smoke test", () => {
     expect(markup).toContain('href="/owner"');
   });
 
-  it("renders the creation form on the meeting-types page", () => {
+  it("renders the add action on the meeting-types page", () => {
     const markup = renderApp("/owner/meeting-types");
 
-    expect(markup).toContain("Новый тип встречи");
-    expect(markup).toContain('name="name"');
-    expect(markup).toContain('name="durationMinutes"');
-    expect(markup).toContain("Создать тип встречи");
+    expect(markup).toContain("Добавить тип встречи");
+    expect(markup).not.toContain("Новый тип встречи");
+    expect(markup).not.toContain('name="name"');
+    expect(markup).not.toContain("Создать тип встречи");
   });
 
   it("renders the upcoming bookings list in the owner cabinet", () => {
