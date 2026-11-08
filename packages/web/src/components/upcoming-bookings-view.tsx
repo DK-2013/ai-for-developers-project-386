@@ -9,7 +9,7 @@ export type UpcomingBookingsViewProps =
 function BookingItem({ booking, timeZone }: { booking: Booking; timeZone: string }) {
   return (
     <li className="rounded-md border border-border p-4">
-      <h3 className="text-lg font-semibold">{booking.meetingTypeName}</h3>
+      <h2 className="text-lg font-semibold">{booking.meetingTypeName}</h2>
       <p className="mt-1">
         {formatSlotDay(booking.startAt, timeZone)}, {formatSlotTime(booking.startAt, timeZone)}–
         {formatSlotTime(booking.endAt, timeZone)}
