@@ -36,6 +36,10 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/call_calendar
+      # --skip-deps only applies to the named task. The `test` step in hk runs
+      # `mise run test`, whose db:up dependency would start Compose on host
+      # port 5432 and collide with the service above.
+      MISE_TASK_SKIP_DEPENDS: "1"
 
     steps:
       - name: Check out repository

@@ -149,7 +149,8 @@ mise run verify     # полный прогон: check + build + test:e2e
 `mise run check`, плюс сборку и браузерные тесты. `mise run test:e2e` поднимает PostgreSQL, API и Vite, устанавливает
 Chromium для Playwright и проходит сценарии из `packages/web/e2e/`: создание типа встречи
 владельцем, публичный список, навигацию и полный сценарий гостя (выбор типа, слота, форма,
-подтверждение). CI использует PostgreSQL как сервис и запускает `mise run --skip-deps verify`
+подтверждение). CI использует PostgreSQL как сервис, выставляет `MISE_TASK_SKIP_DEPENDS=1`
+(чтобы вложенный `mise run test` из `hk` не поднимал Docker) и запускает `mise run --skip-deps verify`
 после `pnpm codegen`; браузер ставится командой `playwright install --with-deps chromium`.
 Ручной чек-лист для проверки UI через MCP описан в `docs/agents/browser-checks.md`.
 
