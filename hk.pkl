@@ -167,7 +167,7 @@ local depcruise = new Step {
 }
 
 local test = new Step {
-  check = "pnpm test"
+  check = "mise run test"
 }
 
 local commitlint = new Step {
