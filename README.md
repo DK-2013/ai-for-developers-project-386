@@ -153,19 +153,28 @@ Chromium для Playwright и проходит сценарии из `packages/w
 после `pnpm codegen`; браузер ставится командой `playwright install --with-deps chromium`.
 Ручной чек-лист для проверки UI через MCP описан в `docs/agents/browser-checks.md`.
 
-## Проверка UI в браузере (MCP)
+## Проверка UI и деплоя (MCP)
 
-Для ручной проверки интерфейса из OpenCode подключены два MCP-сервера. Они объявлены в `opencode.json`, запускаются локально и в Docker-образ не входят.
+Для ручной проверки интерфейса и работы с деплоем из OpenCode подключены MCP-серверы. Они объявлены в `opencode.json` и не входят в Docker-образ: браузерные серверы запускаются локально, Render MCP работает удалённо.
 
 | Сервер | Когда использовать |
 |---|---|
 | Playwright MCP | Навигация по страницам, снимки страницы (snapshot), клики и заполнение форм — когда нужно понять, что видит пользователь. |
 | Chrome DevTools MCP | Консоль, сетевые запросы и производительность — когда нужно разобрать ошибку в браузере или медленную загрузку. |
+| Render MCP | Сервисы, PostgreSQL и логи Render — когда нужно проверить деплой. |
 
 Понадобится [mise](https://mise.jdx.dev/); Docker для MCP не нужен.
 
+Render MCP использует переменную окружения `RENDER_API_KEY`: в `opencode.json` записан только `{env:RENDER_API_KEY}`, сам ключ в репозиторий не попадает. Создайте ключ в Render Dashboard (*Account Settings → API Keys*) и экспортируйте его перед запуском OpenCode:
+
 ```bash
-mise install            # Node, pnpm и оба MCP-сервера
+export RENDER_API_KEY=...
+```
+
+`mise run mcp:check` проверяет подключение браузерных MCP-серверов. Render MCP подключается при старте OpenCode и использует уже заданный `RENDER_API_KEY`.
+
+```bash
+mise install            # Node, pnpm и MCP-серверы
 mise run mcp:browsers   # установить совместимые сборки Chromium
 mise run mcp:check      # проверить подключение серверов и запуск браузера
 ```
