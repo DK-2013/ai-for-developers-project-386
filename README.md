@@ -96,7 +96,7 @@ mise run dev
 - Кабинет владельца: <http://localhost:5173/owner>
 - Проверка живости API: <http://localhost:3000/healthz>
 
-Vite проксирует `/api` на сервер и убирает префикс `/api`, поэтому в development фронтенд и API работают с одного origin.
+Vite проксирует `/api` на сервер, а сервер снимает префикс `/api`, поэтому в development фронтенд и API работают с одного origin. В production тот же сервер отдаёт собранный фронтенд из `WEB_DIST` и снимает `/api` так же, как в development.
 
 Полезные задачи:
 
@@ -127,6 +127,7 @@ mise run docker:up    # собрать и запустить всё в Docker
 | `DATABASE_URL` | `postgres://postgres:postgres@localhost:5432/call_calendar` | Подключение к PostgreSQL |
 | `MIGRATE_ON_START` | `true` | Применять миграции Drizzle при старте (`true`/`false`/`1`/`0`) |
 | `PORT` | `3000` | Порт API |
+| `WEB_DIST` | не задан | Директория с собранным фронтендом; в development не нужна, потому что фронтенд отдаёт Vite |
 | `OWNER_TIMEZONE` | `Europe/Moscow` | Таймзона владельца |
 | `WORKING_HOURS_START` | `10:00` | Начало рабочего дня |
 | `WORKING_HOURS_END` | `18:00` | Конец рабочего дня |
@@ -195,6 +196,8 @@ mise run docker:up
 ```
 
 API будет доступен на <http://localhost:3000>. Внутри образа выполняется многоступенчатая сборка: генерация кода, сборка фронтенда и сервера, затем production-зависимости и запуск `node server/dist/index.js`. В целевом образе миграции применяются при старте контейнера.
+
+Собранный фронтенд отдаёт тот же сервер: веб-приложение — на <http://localhost:3000>, API — по путям `/api/...` (например, `/api/meeting-types`), проверка живости — `/healthz`. На Render укажите `healthCheckPath` равным `/healthz`.
 
 ---
 

@@ -29,6 +29,8 @@ export type Config = {
   port: number;
   databaseUrl: string;
   migrateOnStart: boolean;
+  /** Built web assets served by the API; unset in development, where Vite serves them. */
+  webDist: string | undefined;
   owner: OwnerConfig;
 };
 
@@ -76,6 +78,12 @@ function readEnv(env: Env, name: string, fallback: string): string {
   }
 
   return raw.trim();
+}
+
+function readOptionalEnv(env: Env, name: string): string | undefined {
+  const raw = env[name]?.trim();
+
+  return raw === undefined || raw === "" ? undefined : raw;
 }
 
 function parsePort(raw: string, problems: string[]): number {
@@ -189,6 +197,7 @@ export function parseConfig(env: Env): Config {
     readEnv(env, "WORKING_DAYS", DEFAULT_WORKING_DAYS),
     problems,
   );
+  const webDist = readOptionalEnv(env, "WEB_DIST");
 
   if (start.parsed && end.parsed && Temporal.PlainTime.compare(start.value, end.value) >= 0) {
     problems.push("WORKING_HOURS_START must be before WORKING_HOURS_END");
@@ -202,6 +211,7 @@ export function parseConfig(env: Env): Config {
     port,
     databaseUrl,
     migrateOnStart,
+    webDist,
     owner: {
       timeZone,
       workingHours: { start: start.value, end: end.value },

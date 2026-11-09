@@ -12,6 +12,7 @@ describe("parseConfig", () => {
     expect(config.owner.workingHours.end.toString()).toBe("18:00:00");
     expect(config.owner.workingDays).toEqual([1, 2, 3, 4, 5]);
     expect(config.migrateOnStart).toBe(true);
+    expect(config.webDist).toBeUndefined();
   });
 
   it("reads overrides and sorts working days", () => {
@@ -56,6 +57,11 @@ describe("parseConfig", () => {
 
   it("rejects a database URL that is not PostgreSQL", () => {
     expect(() => parseConfig({ DATABASE_URL: "mysql://localhost/db" })).toThrow(ConfigError);
+  });
+
+  it("reads WEB_DIST and treats a blank value as unset", () => {
+    expect(parseConfig({ WEB_DIST: "/app/web" }).webDist).toBe("/app/web");
+    expect(parseConfig({ WEB_DIST: "  " }).webDist).toBeUndefined();
   });
 
   it("reports every problem at once", () => {

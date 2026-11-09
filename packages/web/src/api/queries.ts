@@ -6,9 +6,10 @@ const FALLBACK_ORIGIN = "http://localhost:3000";
 
 /**
  * The generated SDK passes the endpoint to `URL`, so it must be absolute. In
- * the browser the API lives on the same origin as the page and Vite proxies
- * `/api` to the server; tests and non-browser environments use the local
- * development origin.
+ * the browser the API lives on the same origin as the page, under `/api`; the
+ * server strips that prefix, both behind the Vite proxy in development and when
+ * it serves the built web app in production. Tests and non-browser
+ * environments use the local development origin.
  */
 export function resolveApiEndpoint(
   origin: string | undefined = globalThis.location?.origin,
