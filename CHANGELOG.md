@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/DK-2013/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-09)
+
+
+### Features
+
+* **server:** serve the built web app from the API server ([#32](https://github.com/DK-2013/ai-for-developers-project-386/issues/32)) ([2c7bb95](https://github.com/DK-2013/ai-for-developers-project-386/commit/2c7bb9566d81b9dda301f057af378b021ee37a5a))
+
+
+### Bug Fixes
+
+* **ci:** skip db:up for nested mise tasks ([#36](https://github.com/DK-2013/ai-for-developers-project-386/issues/36)) ([999f027](https://github.com/DK-2013/ai-for-developers-project-386/commit/999f02755451884bcb408b8eddf96f2f4dd8a6fc))
+* **deploy:** corepack exclude since node@25 ([1840e02](https://github.com/DK-2013/ai-for-developers-project-386/commit/1840e02c95a09712cc9aee9b6d8a59e483c8fa2f))
+* **toolchain:** include dependency test from db ([5c111e0](https://github.com/DK-2013/ai-for-developers-project-386/commit/5c111e0e8e58f4ec7aed3003dfd4ab3ecfa74728))
+
 ## [0.2.0](https://github.com/DK-2013/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-09)
 
 
