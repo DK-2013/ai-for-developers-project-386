@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/DK-2013/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-09)
+
+
+### Features
+
+* **booking:** create bookings with overlap protection and a guest flow ([#7](https://github.com/DK-2013/ai-for-developers-project-386/issues/7)) ([eb8bef7](https://github.com/DK-2013/ai-for-developers-project-386/commit/eb8bef72400bb27b35cc25cd191ed3513cfc614f))
+* **bookings:** list upcoming bookings in the owner cabinet ([#8](https://github.com/DK-2013/ai-for-developers-project-386/issues/8)) ([21b4f16](https://github.com/DK-2013/ai-for-developers-project-386/commit/21b4f1679940a7d3a2c82ddb7145c36aaca15cda))
+* **server:** add a database clean task ([#29](https://github.com/DK-2013/ai-for-developers-project-386/issues/29)) ([633d537](https://github.com/DK-2013/ai-for-developers-project-386/commit/633d5377fb9c39194b75e08dba1b6683d73db461))
+* **slots:** compute free slots and render the guest calendar ([#6](https://github.com/DK-2013/ai-for-developers-project-386/issues/6)) ([f2a31a3](https://github.com/DK-2013/ai-for-developers-project-386/commit/f2a31a348656a550d45d3c34c67ef8569d3397c1))
+* **web:** create meeting types in a modal dialog ([#26](https://github.com/DK-2013/ai-for-developers-project-386/issues/26)) ([6e21fb3](https://github.com/DK-2013/ai-for-developers-project-386/commit/6e21fb32c375ef67c0242e893c7c24d70967f6b4))
+* **web:** split owner cabinet into tabbed sections ([#25](https://github.com/DK-2013/ai-for-developers-project-386/issues/25)) ([da44812](https://github.com/DK-2013/ai-for-developers-project-386/commit/da448127cba8d0253db8060154f23bb8e589aed8))
+
+
+### Bug Fixes
+
+* address spec 3 review findings ([#3](https://github.com/DK-2013/ai-for-developers-project-386/issues/3)) ([b71c498](https://github.com/DK-2013/ai-for-developers-project-386/commit/b71c4987183b59b63fdc5e0bcdb5c82e02963df4))
+* **ci:** exclude generated CHANGELOG.md from rumdl ([93be6b1](https://github.com/DK-2013/ai-for-developers-project-386/commit/93be6b1b559c24dfc1924112d89f38148e361b34))
+* **server:** wrap repository query errors with causes ([#3](https://github.com/DK-2013/ai-for-developers-project-386/issues/3)) ([8b7499d](https://github.com/DK-2013/ai-for-developers-project-386/commit/8b7499d6ddc863e5f468ad1bbd2c5b31281a1a31))
+* **tools:** pin the compose project and drop the db daemon ([6cc164a](https://github.com/DK-2013/ai-for-developers-project-386/commit/6cc164a97a3dbb110c807d9ced4b923af41608be))
+* **web:** address owner cabinet review findings ([#25](https://github.com/DK-2013/ai-for-developers-project-386/issues/25)) ([8b9e601](https://github.com/DK-2013/ai-for-developers-project-386/commit/8b9e601dbd8f17ea0ce58c92b8792378f1d69568))
+
 ## 0.1.0 (2026-11-05)
 
 
