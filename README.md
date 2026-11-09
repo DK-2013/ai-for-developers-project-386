@@ -171,12 +171,13 @@ Render MCP использует переменную окружения `RENDER_
 export RENDER_API_KEY=...
 ```
 
-`mise run mcp:check` проверяет подключение браузерных MCP-серверов. Render MCP подключается при старте OpenCode и использует уже заданный `RENDER_API_KEY`.
+`mise run mcp:check` проверяет подключение браузерных MCP-серверов, а `opencode mcp list` показывает состояние всех MCP-серверов, включая Render. Render MCP подключается при старте OpenCode и использует уже заданный `RENDER_API_KEY`.
 
 ```bash
 mise install            # Node, pnpm и MCP-серверы
 mise run mcp:browsers   # установить совместимые сборки Chromium
-mise run mcp:check      # проверить подключение серверов и запуск браузера
+mise run mcp:check      # проверить подключение браузерных серверов и запуск браузера
+opencode mcp list       # проверить состояние всех MCP-серверов, включая Render
 ```
 
 `mise run mcp:browsers` устанавливает совместимые сборки Chromium в кеш Playwright. Chrome DevTools MCP использует сборку Chrome for Testing из этого кеша, поэтому системный Google Chrome не обязателен. Указать другой исполняемый файл Chrome или Chrome for Testing можно переменной `CHROME_DEVTOOLS_MCP_CHROME`.
@@ -210,7 +211,7 @@ API будет доступен на <http://localhost:3000>. Внутри об�
 
 ## Деплой
 
-Приложение развёрнуто на Render: <https://ai-for-developers-project-386-nang.onrender.com>.
+Приложение развёрнуто на [Render](https://ai-for-developers-project-386-nang.onrender.com).
 
 Render собирает сервис из корневого `Dockerfile` и передаёт приложению переменную окружения `PORT`; сервер слушает именно этот порт. Healthcheck указывает на `/healthz`. Бесплатный web service Render засыпает при простое, поэтому первый запрос после паузы может занять до минуты.
 
@@ -219,7 +220,7 @@ Render собирает сервис из корневого `Dockerfile` и п�
 Данные не сбрасываются при перезапуске приложения.
 
 - Локально PostgreSQL хранит данные в Docker-volume `pgdata`, поэтому перезапуск контейнера их не удаляет. Намеренно удалить данные и вернуть стартовый тип встречи можно командой `mise run db:clean`; удаление volume через `docker compose down -v` тоже стирает базу.
-- На Render данные хранятся в managed PostgreSQL и переживают рестарт и редеплой web service. Бесплатная БД Render удаляется по истечении срока действия (текущая — до 2026-12-09), после чего данные теряются.
+- На Render данные хранятся в managed PostgreSQL и переживают рестарт и редеплой web service. Бесплатная БД Render удаляется по истечении срока действия (на момент публикации — до 2026-12-09), после чего данные теряются.
 
 ---
 
