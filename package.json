@@ -20,11 +20,11 @@
   "devDependencies": {
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
-    "agnix": "0.60.1",
-    "dependency-cruiser": "18.7.0",
-    "knip": "6.44.1",
-    "oxfmt": "0.75.0",
-    "oxlint": "1.90.0",
+    "agnix": "0.61.0",
+    "dependency-cruiser": "18.7.2",
+    "knip": "6.44.2",
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
     "syncpack": "15.3.3",
     "typescript": "5.9.3"
   },

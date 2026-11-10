@@ -12,7 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@tanstack/react-query": "5.105.0",
+    "@tanstack/react-query": "5.107.1",
     "@typespec/ts-http-runtime": "0.2.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -20,15 +20,15 @@
     "uri-template": "2.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1",
-    "@tailwindcss/vite": "4.3.3",
+    "@playwright/test": "1.65.0",
+    "@tailwindcss/vite": "4.3.5",
     "@types/node": "26",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "6.1.2",
-    "tailwindcss": "4.3.3",
+    "@vitejs/plugin-react": "6.3.0",
+    "tailwindcss": "4.3.5",
     "typescript": "5.9.3",
-    "vite": "8.3.5",
-    "vitest": "5.0.5"
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
   }
 }
