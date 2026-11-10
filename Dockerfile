@@ -18,25 +18,35 @@ RUN pnpm codegen \
   && mkdir -p /out \
   && cp -r packages/web/dist /out/web
 
+# The default target. Compose and Render set DATABASE_URL and use an external
+# PostgreSQL, so this stage stays slim.
 FROM base AS runtime
 ENV NODE_ENV=production \
     WEB_DIST=/app/web
 WORKDIR /app
 
-# The Hexlet check runs the image without a database service and without
-# DATABASE_URL, so the image can start PostgreSQL on its own.
+COPY --from=build /out/server /app/server
+COPY --from=build /out/web /app/web
+
+USER node
+EXPOSE 3000
+CMD ["node", "server/dist/index.js"]
+
+# Self-contained image for the Hexlet check: it runs without a database service
+# and without DATABASE_URL, so the entrypoint starts an embedded PostgreSQL.
+# This stage must stay last: Hexlet builds `docker build ... code` without
+# --target and therefore gets the final stage.
+FROM runtime AS standalone
+USER root
 # review 2027-03-01: the version follows the base image's Alpine repository.
 # hadolint ignore=DL3018
 RUN apk add --no-cache postgresql16 postgresql16-contrib \
   && mkdir -p /app/data \
   && chown node:node /app/data
 
-COPY --from=build /out/server /app/server
-COPY --from=build /out/web /app/web
-COPY docker/entrypoint.sh /app/docker-entrypoint.sh
+COPY --chown=node:node docker/entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod 755 /app/docker-entrypoint.sh
 
 USER node
-EXPOSE 3000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server/dist/index.js"]

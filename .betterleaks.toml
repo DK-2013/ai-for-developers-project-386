@@ -6,7 +6,6 @@ filter = '''
     filter.matchesAny(attributes["path"], [
         `(^|/)\.env\.example$`,
         `(^|/)docker-compose\.yml$`,
-        `(^|/)docker/entrypoint\.sh$`,
         `(^|/)mise\.toml$`,
         `(^|/)README\.md$`,
         `(^|/)\.github/workflows/quality\.yml$`,

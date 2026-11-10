@@ -20,7 +20,11 @@ services:
       retries: 10
 
   app:
-    build: .
+    # Compose provides the `db` service, so build the slim stage without the
+    # embedded PostgreSQL that only the standalone image needs.
+    build:
+      context: .
+      target: runtime
     depends_on:
       db:
         condition: service_healthy
