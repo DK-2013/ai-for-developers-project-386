@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/DK-2013/ai-for-developers-project-386/compare/v0.3.0...v0.3.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **docker:** split runtime and standalone images ([#43](https://github.com/DK-2013/ai-for-developers-project-386/issues/43)) ([a34378d](https://github.com/DK-2013/ai-for-developers-project-386/commit/a34378dd1a3794d7d97fe259975aac422b702541))
+* **docker:** start embedded PostgreSQL in the standalone image ([#37](https://github.com/DK-2013/ai-for-developers-project-386/issues/37)) ([0f563a5](https://github.com/DK-2013/ai-for-developers-project-386/commit/0f563a58bcf59e7af1aec3b2556a9980143da0dd))
+
 ## [0.3.0](https://github.com/DK-2013/ai-for-developers-project-386/compare/v0.2.0...v0.3.0) (2026-11-09)
 
 
