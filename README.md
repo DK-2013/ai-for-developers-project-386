@@ -80,7 +80,7 @@ EXCLUDE USING gist (tstzrange(start_at, end_at, '[)') WITH &&)
 git clone https://github.com/DK-2013/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
 
-mise install          # Node 26 и pnpm 10
+mise install          # Node 26 и pnpm 12
 mise run setup        # PostgreSQL, зависимости, codegen, git-hooks
 ```
 
