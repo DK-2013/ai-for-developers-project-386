@@ -13,7 +13,7 @@ COPY . .
 RUN pnpm codegen \
   && pnpm --filter @calendar/web build \
   && pnpm --filter @calendar/server build \
-  && pnpm --filter @calendar/server --prod deploy --legacy /out/server \
+  && pnpm --filter @calendar/server --prod deploy /out/server \
   && cp -r packages/server/drizzle /out/server/drizzle \
   && mkdir -p /out \
   && cp -r packages/web/dist /out/web
