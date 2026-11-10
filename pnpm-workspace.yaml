@@ -9,6 +9,14 @@ allowBuilds:
   agnix: true
   esbuild: true
 
+# TypeScript 7.0 ships no compiler API yet (it lands in 7.1), and
+# dependency-cruiser's supportedTranspilers.typescript caps at <7.0.0, which
+# silently zeroes out `pnpm deps:check`. Give it the TypeScript 6 API only.
+packageExtensions:
+  dependency-cruiser:
+    dependencies:
+      typescript: "npm:@typescript/typescript6@6.0.2"
+
 minimumReleaseAgeExclude:
   - "@oxfmt/binding-android-arm-eabi@0.78.0"
   - "@oxfmt/binding-android-arm64@0.78.0"

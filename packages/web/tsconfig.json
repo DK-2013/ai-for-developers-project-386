@@ -14,7 +14,6 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@calendar/sdk": ["./src/sdk/src/index.ts"],
