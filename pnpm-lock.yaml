@@ -246,8 +246,8 @@ importers:
         specifier: 0.16.3
         version: 0.16.3(@alloy-js/csharp@0.24.0)(@alloy-js/python@0.5.0)(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/rest@0.87.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))))
       '@typespec/http-server-js':
-        specifier: 0.58.0-alpha.29
-        version: 0.58.0-alpha.29(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi3@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))))
+        specifier: 0.58.0-alpha.30
+        version: 0.58.0-alpha.30(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi3@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))))
       '@typespec/openapi3':
         specifier: 1.17.0
         version: 1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))))
@@ -1807,13 +1807,13 @@ packages:
       '@typespec/emitter-framework': ^0.21.0
       '@typespec/http': ^1.16.0
 
-  '@typespec/http-server-js@0.58.0-alpha.29':
-    resolution: {integrity: sha512-w5ShRnJQbo4polbQQB03qZErXkB+ovG1/sNtLzYST4qj+OFQZJmVLdyTmKnLl8Ojm92W0uqZ3k9TL0pN3+73TA==}
+  '@typespec/http-server-js@0.58.0-alpha.30':
+    resolution: {integrity: sha512-7eeEhrdVEbWu7elx5kMFbbRpUDHNZccVd0CEjcjxI7b23Oh7TQ70dt0XE9CkzgdEsbSvNnBjzwtrNoqfzxqfLw==}
     hasBin: true
     peerDependencies:
-      '@typespec/compiler': ^1.16.0
-      '@typespec/http': ^1.16.0
-      '@typespec/openapi3': ^1.16.0
+      '@typespec/compiler': ^1.18.0
+      '@typespec/http': ^1.18.0
+      '@typespec/openapi3': ^1.18.0
     peerDependenciesMeta:
       '@typespec/openapi3':
         optional: true
@@ -1873,6 +1873,7 @@ packages:
   '@typespec/ts-http-runtime@0.3.10':
     resolution: {integrity: sha512-vddvvtZ7sejSlCv+OIkn2ztjB1O31Fc2JsxI/YK725r3elXXlF/J3o3lbXJFRhoeWRWK1tjdZ+GTi6Fdtrp+EA==}
     engines: {node: '>=22.0.0'}
+    deprecated: A newer version 0.3.11 has been published.
 
   '@vitejs/plugin-react@6.3.0':
     resolution: {integrity: sha512-H9E955aVvD2F4zNHCw4eIZbIfF6xKldlh7MNu+hSU7xwQzh65lI/N+CJWqmfhi0PEjDXIt/H7T7J/4wU63KJiw==}
@@ -4401,7 +4402,7 @@ snapshots:
       '@typespec/emitter-framework': 0.21.0(@alloy-js/core@0.25.0)(@alloy-js/csharp@0.24.0)(@alloy-js/python@0.5.0)(@alloy-js/typescript@0.25.0)(@typespec/compiler@1.17.0(@types/node@26.6.6))
       '@typespec/http': 1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))
 
-  '@typespec/http-server-js@0.58.0-alpha.29(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi3@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))))':
+  '@typespec/http-server-js@0.58.0-alpha.30(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi3@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))(@typespec/openapi@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))(@typespec/http@1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6)))))':
     dependencies:
       '@typespec/compiler': 1.17.0(@types/node@26.6.6)
       '@typespec/http': 1.17.0(@typespec/compiler@1.17.0(@types/node@26.6.6))
